@@ -1,0 +1,45 @@
+export(syn,
+#     syn.cart.bboot,
+       syn.cart,
+       syn.ctree,
+       syn.logreg,
+       syn.norm,
+       syn.normrank,
+       syn.passive,
+       syn.pmm,
+       syn.polr,
+       syn.polyreg,
+       syn.sample,
+       syn.surv.ctree)
+
+export(compare.synds,
+       compare.fit.synds, print.compare.fit.synds,	
+       lm.synds, glm.synds, print.fit.synds,
+       print.synds,
+       summary.synds, print.summary.synds,
+       summary.fit.synds, print.summary.fit.synds)
+
+
+S3method(print,synds)
+S3method(summary,synds)
+S3method(print,summary.synds)
+S3method(print,fit.synds)
+S3method(summary,fit.synds)
+S3method(print,summary.fit.synds)
+S3method(print,compare.fit.synds)
+
+#exportClasses(synds)
+#exportClasses(fit.synds)
+
+import(MASS,
+       methods, 
+       nnet,
+       lattice)
+
+importFrom(party,ctree)
+importFrom(party,where)
+importFrom(party,ctree_control)
+importFrom(rpart,rpart)
+importFrom(rpart,rpart.control)
+importFrom(stats,glm)
+importFrom(stats,lm)
