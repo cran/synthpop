@@ -65,8 +65,8 @@ syn.norm <- function(y, x, xp, proper = FALSE, ...)
 syn.lognorm <- function (y, x, xp, proper = FALSE, ...) 
 {
   addbit <- FALSE
-  if (any(y) < 0) stop("Log transformation not appropriate for negative values.\n")
-  if (any(y) == 0) { y <- y + min(y); y <- log(y); addbit <- TRUE}  ##  warning about this and above should be in check model
+  if (any(y < 0)) stop("Log transformation not appropriate for negative values.\n")
+  if (any(y == 0)) {y <- y + .5*min(y[y!=0]); y <- log(y); addbit <- TRUE}  ##  warning about this and above should be in check model
   else y <- log(y)
   x   <- cbind(1, as.matrix(x))
   xp  <- cbind(1, as.matrix(xp))
@@ -76,7 +76,7 @@ syn.lognorm <- function (y, x, xp, proper = FALSE, ...)
     parm <- .norm.draw.syn(y, x, ...)
   }
   res <- xp %*% parm$beta + rnorm(nrow(xp)) * parm$sigma
-  if (addbit) {res <- res-min(y); res[res<=0] <- 0}
+  if (addbit) {res <- res-.5*min(y[y!=0]); res[res<=0] <- 0}
   res <- exp(res)
   res <- round(res,max(sapply(y,decimalplaces)))
   return(res)
@@ -88,7 +88,7 @@ syn.lognorm <- function (y, x, xp, proper = FALSE, ...)
 syn.sqrtnorm <- function (y, x, xp, proper = FALSE, ...) 
 {
   addbit <- FALSE
-  if (any(y) < 0) stop("Square root transformation not appropriate for negative values.\n")   ##  needs check in checkmodel
+  if (any(y < 0)) stop("Square root transformation not appropriate for negative values.\n")   ##  needs check in checkmodel
   else y <- sqrt(y)
   x   <- cbind(1, as.matrix(x))
   xp  <- cbind(1, as.matrix(xp))
@@ -109,7 +109,7 @@ syn.sqrtnorm <- function (y, x, xp, proper = FALSE, ...)
 syn.cubertnorm <- function (y, x, xp, proper = FALSE, ...) 
 {
   addbit <- FALSE
-  if (any(y) < 0) stop("Cube root transformation not appropriate for negative values.\n")   ##  needs check in checkmodel
+  if (any(y < 0)) stop("Cube root transformation not appropriate for negative values.\n")   ##  needs check in checkmodel
   else y <- y^(1/3)
   x   <- cbind(1, as.matrix(x))
   xp  <- cbind(1, as.matrix(xp))
@@ -181,7 +181,7 @@ syn.normrank <- function(y, x, xp, smoothing, proper = FALSE, ...)
 
 
 ###-----syn.ranknorm-------------------------------------------------------
-
+# check if this function is needed
 syn.ranknorm <- function(y, x, xp, proper = FALSE, ...)
 {
 # Regression synthesis of y given x, with a fixed regression
@@ -671,27 +671,28 @@ syn.cart.bboot <- function(y, x, xp, proper = FALSE,
 
 
 ###-----is.passive---------------------------------------------------------
-
 is.passive <- function(string) return("~"==substring(string,1,1))
 
   
 ###-----resample-----------------------------------------------------------
 # used in syn.cart() and syn.cart.bboot() instead of sample() 
 # for safety reasons, i.e. to avoid sampling from 1:x when length(x)==1
-
 resample   <- function(x, ...) x[sample.int(length(x),...)]
 
 
 ###-----decimalplaces------------------------------------------------------
 # counts number of decimal places - used for rounding smoothed values
-decimalplaces <- function(x) {
-  if ((x %% 1) != 0) {
-    nchar(strsplit(sub('0+$', '', as.character(x)), ".", fixed=TRUE)[[1]][[2]])
+# approximate in some cases (as.character -> 15 significant digits; 
+# scientific notation)
+decimalplaces <- function (x) 
+{
+  x <- x - floor(x) # -> more digit numbers 
+  if ((x%%1) != 0 & (round(x, 15)%%1 != 0)) {
+    nchar(strsplit(sub("0+$","",as.character(x)),".",fixed=TRUE)[[1]][[2]])
   } else {
     return(0)
   }
 }
-
 
 ###-----get.names----------------------------------------------------------
 get.names <- function(formula,names){

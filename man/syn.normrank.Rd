@@ -1,6 +1,5 @@
 \name{syn.normrank}
 \alias{syn.normrank}
-%\alias{syn.normrank.proper}
 \title{Synthesis by normal linear regression preserving
   the marginal distribution}
 \description{
@@ -33,7 +32,6 @@ syn.normrank(y, x, xp, smoothing, proper = FALSE, ...)
   are drawn from normal distribution with mean and variance
   from the fitted model.}
 \value{A vector of length \code{k} with synthetic values of \code{y}.}
-%\references{...}
 \seealso{
-  \code{\link{syn}}, \code{\link{syn.norm}}}
+  \code{\link{syn}}, \code{\link{syn.norm}}, \code{\link{syn.lognorm}}}
 \keyword{datagen}

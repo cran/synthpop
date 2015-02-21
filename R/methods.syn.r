@@ -1,4 +1,4 @@
-###-----print.synds------------------------------------------------------
+###-----print.synds--------------------------------------------------------
 
 print.synds <- function(x, ...){
   cat("Call:\n($call) ")
@@ -14,10 +14,10 @@ print.synds <- function(x, ...){
   cat("...\n")
   cat("\nSynthesising methods: \n($method)\n")
   print(x$method)
-  cat("\nOrder of synthesis: \n($visitSequence)\n")
-  print(x$visitSequence)
-  cat("\nMatrix of predictors: \n($predictorMatrix)\n")
-  print(x$predictorMatrix)     
+  cat("\nOrder of synthesis: \n($visit.sequence)\n")
+  print(x$visit.sequence)
+  cat("\nMatrix of predictors: \n($predictor.matrix)\n")
+  print(x$predictor.matrix)     
   invisible(x)
 }
 
@@ -66,7 +66,7 @@ print.summary.synds <- function(x, ...){
 }
 
 
-###-----print.fit.synds------------------------------------------------------
+###-----print.fit.synds----------------------------------------------------
 
 print.fit.synds <- function(x, msel=1, ...)
 {
@@ -134,9 +134,9 @@ glm.synds <- function(formula, family="binomial", object, ...)
 }
 
 
-###-----summary.fit.synds----------------------------------------------------
+###-----summary.fit.synds--------------------------------------------------
 
-summary.fit.synds <- function(object, populationInference = FALSE, ...)
+summary.fit.synds <- function(object, population.inference = FALSE, ...)
 { # df.residual changed to df[2] because didn't work for lm - check if that's ok
   if (!class(object) == "fit.synds") stop("Object must have class fit.synds\n")
   m <- object$m
@@ -160,24 +160,24 @@ summary.fit.synds <- function(object, populationInference = FALSE, ...)
     #bm <- apply(matcoef,2,var) not needed xpt for partial synthesis
   }
 
-  if (populationInference == F){ ## inf to Q hat
+  if (population.inference == F){ ## inf to Q hat
 
     if (object$proper == F){
       ## simple synthesis
       result <- cbind(coefficients,
-                      sqrt(vars*k/n ),
-                      coefficients/sqrt(vars*k/n),
                       sqrt(vars/m),
-                      sqrt((1 + (coefficients/sqrt(vars*k/n))^2/2/object$analyses[[1]]$df[2])/m))
-      dimnames(result)[[2]] <- c("beta syn", "se beta syn","Z syn", "syn err beta", "syn err Z")
+                      sqrt(vars*k/n),
+                      coefficients/sqrt(vars*k/n),
+                      sqrt((1 + coefficients^2/vars/2/object$analyses[[1]]$df[2])*n/k/m))
+      dimnames(result)[[2]] <- c("B.syn","se(B.syn)","se(Beta).syn","Z.syn","se(Z.syn)")
     } else {
       ## proper synthesis
       result <- cbind(coefficients,
+                      sqrt(vars*(1+k/n)/m), 
                       sqrt(vars*k/n),
                       coefficients/sqrt(vars*k/n),
-                      sqrt(vars*(1+k/n)/m),
-                      sqrt((1 + (coefficients/sqrt(vars*k/n) )^2/2/object$analyses[[1]]$df[2])/m))
-      dimnames(result)[[2]] <- c("beta syn", "se beta syn","Z syn", "syn err beta", "syn err Z")
+                      sqrt((1 + k/n + coefficients^2/vars/2/object$analyses[[1]]$df[2])*n/k/m))
+      dimnames(result)[[2]] <- c("B.syn","se(B.syn)","se(Beta).syn","Z.syn","se(Z.syn)")
     }
 
   } else { ## pop inference to Q
@@ -186,16 +186,17 @@ summary.fit.synds <- function(object, populationInference = FALSE, ...)
       ## simple synthesis
       Tf <- vars*(k/n+1/m)
       result <- cbind(coefficients,sqrt(Tf),coefficients/sqrt(Tf))
-      dimnames(result)[[2]] <- c("est","se","Z")
+      dimnames(result)[[2]] <- c("B.syn","se(B.syn)","Z.syn")
     }
     else {
       ## proper synthesis
       Tf <- vars*(k/n+(1+k/n)/m)
       result <- cbind(coefficients,sqrt(Tf),coefficients/sqrt(Tf))
-      dimnames(result)[[2]] <- c("est","se","Z")
+      dimnames(result)[[2]] <- c("B.syn","se(B.syn)","Z.syn")
     }
   }
   res <- list(call = object$call, proper = object$proper,
+              population.inference = population.inference,
               fitting.function = object$fitting.function,
               m = m, coefficients = result, n = n, k = k)
   class(res) <- "summary.fit.synds"
@@ -203,29 +204,52 @@ summary.fit.synds <- function(object, populationInference = FALSE, ...)
 }
 
 
-###-----print.summary.fit.synds----------------------------------------------
+###-----print.summary.fit.synds--------------------------------------------
 
 print.summary.fit.synds <- function(x, ...) {
   if (x$m==1) {
-    cat("Fit to synthetic data set with a single synthesis\n")
+    cat("\nFit to synthetic data set with a single synthesis.\n")
   } else {
-    cat("Fit to synthetic data set with ",x$m," syntheses\n",sep="")
+    cat("\nFit to synthetic data set with ",x$m," syntheses.\n",sep="")
+  }
+  if (x$population.inference) {
+    cat("Inference to population coefficients.\n")
+  } else {
+    cat("Inference to coefficients and standard errors\nthat would be obtained from the observed data.\n")
   }
   cat("\nCall:\n")
   print(x$call)
   cat("\nCombined estimates:\n")
-  print(x$coefficients)
+  if (x$population.inference){
+    print(x$coefficients[,c("B.syn","se(B.syn)")])
+  } else {
+    print(x$coefficients[,c("B.syn","se(Beta).syn")])
+  }      
   invisible(x)
 }
 
 
-###-----print.compare.fit.synds----------------------------------------------
+###-----print.compare.fit.synds--------------------------------------------
 
-print.compare.fit.synds <- function(x, ...) {
-  cat("\nCall used to fit models to synthetised data sets:\n")
+print.compare.fit.synds <- function(x, ...){
+  cat("\nCall used to fit models to the synthetised data set(s):\n")
   print(x$fit.synds.call)
-  cat("\nCoefficients (combined results for synthetised data sets):\n")
-  print(x$coefficients)
+  cat("\nEstimates for the observed data set:\n")
+  print(x$coef.obs)
+  cat("\nCombined estimates for the synthetised data set(s):\n")
+  print(x$coef.syn)
+  print(x$ci.plot)
   invisible(x)
 }
 
+
+###-----print.compare.synds------------------------------------------------
+
+print.compare.synds <- function(x, ...){
+  cat("\nComparing percentages observed with synthetic.\n")
+  if(x$plot.na) cat("For numeric variables missing data categories are presented seperately.\n")
+  cat("\n")
+  print(x$freq.table)
+  print(x$p)
+  invisible(x)
+}

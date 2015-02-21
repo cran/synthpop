@@ -1,4 +1,4 @@
-padModel.syn <- function(data, method, predictorMatrix, visitSequence,
+padModel.syn <- function(data, method, predictor.matrix, visit.sequence,
                          nvar, rules, rvalues, factorNA, smoothing, denom) {
 
  # Function called by syn to make dummy variables data frame data is 
@@ -23,7 +23,7 @@ padModel.syn <- function(data, method, predictorMatrix, visitSequence,
   pred.with.cart <- method %in% c("ctree","ctree.proper","cart","cart.proper")         #!BN1605
 
   for(j in 1:nvar){
-    if ((is.factor(data[,j]) & any(predictorMatrix[1:nvar,j]!=0 & !pred.with.cart)) |  #!BN1605
+    if ((is.factor(data[,j]) & any(predictor.matrix[1:nvar,j]!=0 & !pred.with.cart)) |  #!BN1605
         (factorNA[j]==TRUE & !pred.with.cart[j])){                                     #!BN1605
       categories[j, 1] <- TRUE
 
@@ -32,37 +32,37 @@ padModel.syn <- function(data, method, predictorMatrix, visitSequence,
       n.dummy   <- length(levels(data[, j])) - 1
       categories[j, 2] <- n.dummy
 
-      # predictorMatrix is given extra rows and columns for the dummy variables
+      # predictor.matrix is given extra rows and columns for the dummy variables
       # rows are set to zero initially
-      predictorMatrix <- rbind(predictorMatrix, matrix(0,
-                               ncol=ncol(predictorMatrix), nrow=n.dummy))
+      predictor.matrix <- rbind(predictor.matrix, matrix(0,
+                               ncol=ncol(predictor.matrix), nrow=n.dummy))
       
       # columns are set to zero and then for vars with non-CART method          #!BN1605
-      # copied from an original variable j in predictorMatrix for               #!BN1605
+      # copied from an original variable j in predictor.matrix for               #!BN1605
       # -> 1 for all the rows for which this variable is being used as          #!BN1605
       # a predictor in a non-CART model, 0 otherwise                            #!BN1605
-      predictorMatrix <- cbind(predictorMatrix, matrix(0, ncol=n.dummy,         #!BN1605
-                               nrow=nrow(predictorMatrix)))                     #!BN1605
-      predictorMatrix[!pred.with.cart,(ncol(predictorMatrix)-n.dummy+1):        #!BN1605
-        ncol(predictorMatrix)] <- matrix(rep(predictorMatrix[!pred.with.cart,j],times=n.dummy)) #!BN1605
+      predictor.matrix <- cbind(predictor.matrix, matrix(0, ncol=n.dummy,         #!BN1605
+                               nrow=nrow(predictor.matrix)))                     #!BN1605
+      predictor.matrix[!pred.with.cart,(ncol(predictor.matrix)-n.dummy+1):        #!BN1605
+        ncol(predictor.matrix)] <- matrix(rep(predictor.matrix[!pred.with.cart,j],times=n.dummy)) #!BN1605
                                
       # the original categorical variable is removed from predictors (=insert zeros)
       # for variables with non-CART method 
-      predictorMatrix[!pred.with.cart,j] <- 0                                   #!BN1605
+      predictor.matrix[!pred.with.cart,j] <- 0                                   #!BN1605
 
 
  # insert the column number for first of this set of dummies into
  # the visit sequence immediately after the jth column is predicted
-      if (any(visitSequence == j)){
+      if (any(visit.sequence == j)){
         # set an original categorical variable as predictor for its dummies  
-        predictorMatrix[(ncol(predictorMatrix) - n.dummy + 1):
-                         ncol(predictorMatrix), j] <- rep(1, times = n.dummy)
+        predictor.matrix[(ncol(predictor.matrix) - n.dummy + 1):
+                         ncol(predictor.matrix), j] <- rep(1, times = n.dummy)
         # insert dummies into visit sequence 
-        newcol <- ncol(predictorMatrix) - n.dummy + 1
-        nloops <- sum(visitSequence == j)
+        newcol <- ncol(predictor.matrix) - n.dummy + 1
+        nloops <- sum(visit.sequence == j)
           for (ii in 1:nloops){
-            idx <- (1:length(visitSequence))[visitSequence==j][ii]
-            visitSequence <- append(visitSequence, newcol, idx)
+            idx <- (1:length(visit.sequence))[visit.sequence==j][ii]
+            visit.sequence <- append(visit.sequence, newcol, idx)
           }
       }
 
@@ -70,16 +70,16 @@ padModel.syn <- function(data, method, predictorMatrix, visitSequence,
       data <- (cbind(data, matrix(0, ncol = n.dummy, nrow = nrow(data))))
 
  # set dummies to missing when variable is missing
-      data[is.na(data[, j]), (ncol(predictorMatrix) - n.dummy + 1):
-                              ncol(predictorMatrix)] <- NA
+      data[is.na(data[, j]), (ncol(predictor.matrix) - n.dummy + 1):
+                              ncol(predictor.matrix)] <- NA
       cat.column <- data[!is.na(data[, j]), j]  # these are the non missing values of this factor
 
  # next bit sets the colums for the dummies to the dummy variables 
  # when data are not missing and labels columns
-      data[!is.na(data[, j]),(ncol(predictorMatrix) - n.dummy + 1):
-           ncol(predictorMatrix)] <- model.matrix(~cat.column - 1)[,-1]
-      names(data)[(ncol(predictorMatrix) - n.dummy + 1):
-                   ncol(predictorMatrix)] <- paste(attr(data,"names")[j],
+      data[!is.na(data[, j]),(ncol(predictor.matrix) - n.dummy + 1):
+           ncol(predictor.matrix)] <- model.matrix(~cat.column - 1)[,-1]
+      names(data)[(ncol(predictor.matrix) - n.dummy + 1):
+                   ncol(predictor.matrix)] <- paste(attr(data,"names")[j],
                                                    (1:n.dummy),sep=".")
       method     <- c(method, rep("dummy", n.dummy))
       rules      <- c(rules,rep(rules[j],n.dummy))
@@ -93,20 +93,20 @@ padModel.syn <- function(data, method, predictorMatrix, visitSequence,
   }                                                       
    
   varnames <- dimnames(data)[[2]]  # now includes dummy names
-  dimnames(predictorMatrix) <- list(varnames, varnames)
+  dimnames(predictor.matrix) <- list(varnames, varnames)
   names(method) <- varnames
-  names(visitSequence) <- varnames[visitSequence]
+  names(visit.sequence) <- varnames[visit.sequence]
   dimnames(categories)[[1]] <- dimnames(data)[[2]]
   
-  #print(predictorMatrix)
-  #print(visitSequence)
+  #print(predictor.matrix)
+  #print(visit.sequence)
   #print(categories)
   
   return(list(data = as.data.frame(data), 
               syn = as.data.frame(data),
-              predictorMatrix = predictorMatrix, 
+              predictor.matrix = predictor.matrix, 
               method = method, 
-              visitSequence = visitSequence, 
+              visit.sequence = visit.sequence, 
               rules = rules,
               rvalues = rvalues, 
               categories = categories,

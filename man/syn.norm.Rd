@@ -1,13 +1,12 @@
 \name{syn.norm}
 \alias{syn.norm}
-%\alias{syn.norm.proper}
 \title{Synthesis by linear regression}
 \description{
   Generates univariate synthetic data using linear regression
   analysis.
 }
 \usage{
-  syn.norm(y, x, xp, proper = FALSE, ...) 
+syn.norm(y, x, xp, proper = FALSE, ...) 
 }
 \arguments{
   \item{y}{an original data vector of length \code{n}.}
@@ -24,7 +23,6 @@
   are drawn from normal distribution with mean and variance
   from the fitted model.}
 \value{A vector of length \code{k} with synthetic values of \code{y}.}
-%\references{...}
 \seealso{
-  \code{\link{syn}}, \code{\link{syn.normrank}}}
+  \code{\link{syn}}, \code{\link{syn.normrank}}, \code{\link{syn.lognorm}}}
 \keyword{datagen}

@@ -1,5 +1,5 @@
 export(syn,
-#     syn.cart.bboot,
+#       syn.cart.bboot,
        syn.cart,
        syn.ctree,
        syn.logreg,
@@ -10,14 +10,18 @@ export(syn,
        syn.polr,
        syn.polyreg,
        syn.sample,
-       syn.surv.ctree)
+       syn.surv.ctree,
+       syn.lognorm,
+       syn.sqrtnorm,
+       syn.cubertnorm)
 
 export(compare.synds,
        compare.fit.synds, print.compare.fit.synds,	
        lm.synds, glm.synds, print.fit.synds,
        print.synds,
        summary.synds, print.summary.synds,
-       summary.fit.synds, print.summary.fit.synds)
+       summary.fit.synds, print.summary.fit.synds,
+       replicated.uniques, sdc, read.obs, write.syn)
 
 
 S3method(print,synds)
@@ -27,6 +31,7 @@ S3method(print,fit.synds)
 S3method(summary,fit.synds)
 S3method(print,summary.fit.synds)
 S3method(print,compare.fit.synds)
+S3method(print,compare.synds)
 
 #exportClasses(synds)
 #exportClasses(fit.synds)
@@ -34,8 +39,15 @@ S3method(print,compare.fit.synds)
 import(MASS,
        methods, 
        nnet,
-       lattice)
+       lattice,
+       foreign,
+       ggplot2,
+       plyr,
+       proto,
+       coefplot
+       )
 
+#importFrom(coefplot,collidev)
 importFrom(party,ctree)
 importFrom(party,where)
 importFrom(party,ctree_control)

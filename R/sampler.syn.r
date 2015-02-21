@@ -1,22 +1,22 @@
 #-----------------------------sampler.syn-------------------------------
 
-sampler.syn <- function(p, data, m, syn, visitSequence,
+sampler.syn <- function(p, data, m, syn, visit.sequence,
                         rules, rvalues, event, proper,
-                        minbucket, printFlag, 
-                        k, pred_not_syn, ...){
+                        minbucket, print.flag, 
+                        k, pred.not.syn, ...){
  # The sampler controls the generation of conditional distributions
  # This function is called by syn
  #
  # Authors: G Raab & B Nowok 2013-14
  # 
   if (m > 0){
-	  if (printFlag) cat("syn  variables")
+	  if (print.flag) cat("syn  variables")
     for (i in 1:m){  # begin i loop : repeated synthesising loop
-      if (printFlag) cat("\n",i,"   ",sep="")
+      if (print.flag) cat("\n",i,"   ",sep="")
 ## augment the data with the actual dummy variables  maybe not needed now??  GR
  # This next code replaces the dummy variables for a synthesised variable with 
  # the new values 
- #     for (j in setdiff(p$visitSequence,visitSequence)){
+ #     for (j in setdiff(p$visit.sequence,visit.sequence)){
  #       cat.columns <- p$syn[, p$categories[j, 4]]
  #       p$syn[,(j:(j+p$categories[p$categories[j,4],2]-1))] <- 
  #                        matrix((model.matrix(~cat.columns-1)[,-1]),
@@ -24,11 +24,11 @@ sampler.syn <- function(p, data, m, syn, visitSequence,
  #       p$syn[,j]<-as.numeric(p$syn[,j])
  #     }
 
-      for(j in p$visitSequence) {
+      for(j in p$visit.sequence) {
         theMethod <- p$method[j]
         vname     <- dimnames(p$data)[[2]][j]
         
-        if(printFlag & theMethod!="dummy"  & j<=ncol(data)) cat(" ",vname,sep="")
+        if(print.flag & theMethod!="dummy"  & j<=ncol(data)) cat(" ",vname,sep="")
         if(j%%10==0 & j<=ncol(data)) cat("\n    ")
         
         ya <-  1:nrow(p$data) 
@@ -58,8 +58,8 @@ sampler.syn <- function(p, data, m, syn, visitSequence,
           }
           else
           {
-            x    <- p$data[ya, p$predictorMatrix[j, ] == 1, drop = FALSE]
-            xp   <- p$syn [ypa, p$predictorMatrix[j, ] == 1, drop = FALSE]
+            x    <- p$data[ya, p$predictor.matrix[j, ] == 1, drop = FALSE]
+            xp   <- p$syn [ypa, p$predictor.matrix[j, ] == 1, drop = FALSE]
             y    <- p$data[ya, j]
             if (is.factor(y)) y <- y[,drop=TRUE]
             nam  <- vname
@@ -124,12 +124,12 @@ sampler.syn <- function(p, data, m, syn, visitSequence,
       syn[[i]] <- p$syn[,1:dim(data)[2]]
       nms<-names(data)
       # exclude unsynthesised if drop.pred.only set to true
-      if (sum(pred_not_syn )>0) {
-        syn[[i]] <- syn[[i]][,!pred_not_syn]
-        nms<-nms[!pred_not_syn]                               #GR save names to use below if data just one column
+      if (sum(pred.not.syn )>0) {
+        syn[[i]] <- syn[[i]][,!pred.not.syn]
+        nms<-nms[!pred.not.syn]                               #GR save names to use below if data just one column
       }
                                           # GR changes extra lines needed # to prevent a single character column being changed to a factor
-      chgetochar<- (sum(!pred_not_syn)==1 & class(syn[[i]][,1])=="character")       
+      chgetochar<- (sum(!pred.not.syn)==1 & class(syn[[i]][,1])=="character")       
   
       syn[[i]] <- as.data.frame(syn[[i]])
       if (chgetochar) {
@@ -156,7 +156,7 @@ sampler.syn <- function(p, data, m, syn, visitSequence,
     } # end i loop
  } # end synthesising
   
- if (printFlag) cat("\n")
+ if (print.flag) cat("\n")
  return(syn)
 }
 

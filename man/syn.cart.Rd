@@ -42,7 +42,6 @@ syn.cart(y, x, xp, smoothing, proper = FALSE, minbucket, cp = 1e-04, ...)
   in a stopping rule for the splitting process.
 }
 \value{A vector of length \code{k} with synthetic values of \code{y}.}
-%\references{...}
 \seealso{
   \code{\link{syn}}, \code{\link{syn.surv.ctree}},
   \code{\link[rpart]{rpart}}, \code{\link[party]{ctree}}

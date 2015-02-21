@@ -7,7 +7,7 @@
   classification and regression trees (without or with bootstrap).
 }
 \usage{
- syn.surv.ctree(y, yevent, x, xp, proper = FALSE, minbucket, ...)
+syn.surv.ctree(y, yevent, x, xp, proper = FALSE, minbucket, ...)
 }
 \arguments{
   \item{y}{a vector of length \code{n} with original time data.}

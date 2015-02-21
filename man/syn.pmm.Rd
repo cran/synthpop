@@ -7,7 +7,7 @@
   matching.
 }
 \usage{
-  syn.pmm(y, x, xp, proper = FALSE, ...)
+syn.pmm(y, x, xp, proper = FALSE, ...)
 }
 \arguments{
   \item{y}{an original data vector of length \code{n}.}

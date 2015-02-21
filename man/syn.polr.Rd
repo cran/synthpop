@@ -7,8 +7,8 @@
   ordered polytomous regression (without or with bootstrap).
 }
 \usage{
- syn.polr(y, x, xp, proper = FALSE, nnet.maxit = 100, nnet.trace = FALSE, 
-   nnet.MaxNWts = 10000, ...)
+syn.polr(y, x, xp, proper = FALSE, nnet.maxit = 100, nnet.trace = FALSE, 
+  nnet.MaxNWts = 10000, ...)
 }
 \arguments{
   \item{y}{an original data vector of length \code{n}.}

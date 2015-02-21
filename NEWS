@@ -1,0 +1,35 @@
+synthpop 1.1-0
+---------------
+
+NEW FEATURES
+* Function sdc() for statistical disclosure control of the synthesised data 
+  set(s); function replicated.uniques() to determine which unique units in the 
+  synthesised data set(s) replicates unique units in the original data set.    
+* Function read.obs() to import original data sets form external files.
+* Function write.syn() to export synthetic data sets to external files and 
+  create a text file with information about the synthesis.
+* syn() has new `semicont` parameter that allows to define spike(s) 
+  for semi-continuous variables in order to synthesise them seperately.
+* `lognorm`, `sqrtnorm` and `cubertnorm` methods for synthesis by linear 
+  regression after natural logarithm, square root or cube root transformation 
+  of a dependent variable.  
+* `seed` argument for syn() function.
+
+CHANGES
+* Revised output of summary.fit.synds() and compare.fit.synds(); 
+  standard errors of Z scores corrected (se(Z.syn)) 
+  (thanks to Joerg Drechsler).
+* Figures for compare.fit.synds() and compare.synds() functions plotted 
+  using ggplot2 functions.  
+* period.separated or alllowercase naming convention has been adopted and 
+  parameter names `populationInference`, `visitSequence`, `predictorMatrix`,
+  `contNA`, `defaultMethod`, `printFlag` and `nlevelmax` have been changed to
+  `population.inference`, `visit.sequence`, `predictor.matrix`, `cont.na`,
+  `default.method`, `print.flag` and `minnumlevels` respectively.
+* Default for drop.pred.only changed to FALSE.
+
+BUG FIXES
+* Rounding procedure (thanks to bug report by Joerg Drechsler).
+* Warning about extra disregarded argument `family` in compare.fit.synds().
+
+

@@ -39,7 +39,7 @@ lm.synds(formula, object, ...)
   \item{call}{the original call to \code{glm.synds} or \code{lm.synds}.}
   \item{proper}{a logical value indicating whether synthetic data were 
     generated using proper synthesis.}
-  \item{m}{the number of synthetic versions of the real data.}
+  \item{m}{the number of synthetic versions of the observed data.}
   \item{analyses}{\code{summary.glm} or \code{summary.lm} object respectively
     or a list of \code{m} such objects.}
   \item{fitting.function}{function used to fit the model.}
@@ -50,20 +50,20 @@ lm.synds(formula, object, ...)
   \code{\link[stats]{glm}},\code{\link[stats]{lm}}
 }
 \examples{
-  ### Logit model 
-  rds <- SD2011[1:1000,c("sex","age","edu","marital","ls","smoke")]
-  s1 <- syn(rds, m = 3)
-  f1 <- glm.synds(smoke ~ sex + age + edu + marital + ls, object = s1, family = "binomial")
-  f1
-  print(f1, msel = 1:2)
+### Logit model 
+ods <- SD2011[1:1000,c("sex","age","edu","marital","ls","smoke")]
+s1 <- syn(ods, m = 3)
+f1 <- glm.synds(smoke ~ sex + age + edu + marital + ls, object = s1, family = "binomial")
+f1
+print(f1, msel = 1:2)
   
-  ### Linear model
-  rds <- SD2011[1:1000,c("sex","age","income","marital","depress")]
-  rds$income[rds$income == -8] <- NA
-  s2 <- syn(rds, m = 3)
-  f2 <- lm.synds(depress ~ sex + age + log(income) + marital, object = s2)
-  f2
-  print(f2,1:3)
+### Linear model
+ods <- SD2011[1:1000,c("sex","age","income","marital","depress")]
+ods$income[ods$income == -8] <- NA
+s2 <- syn(ods, m = 3)
+f2 <- lm.synds(depress ~ sex + age + log(income) + marital, object = s2)
+f2
+print(f2,1:3)
 }
 \keyword{multivariate}
 

@@ -5,7 +5,7 @@
  Generates a random sample from the observed data.
 }
 \usage{
- syn.sample(y, xp, proper = FALSE, ...)
+syn.sample(y, xp, proper = FALSE, ...)
 }
 \arguments{
   \item{y}{an original data vector of length \code{n}.}

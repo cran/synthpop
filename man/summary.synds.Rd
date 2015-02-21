@@ -18,8 +18,8 @@ Produce summaries of the synthesised variables for selected copies of synthetic 
 }
 \details{See \code{\link[base]{summary}} for more details.}
 \value{
-An object of class \code{summary.synds}, which is a list with the following components:
-  \item{m}{the number of synthetic versions of the real data.}
+  An object of class \code{summary.synds}, which is a list with the following components:
+  \item{m}{the number of synthetic versions of the original (observed) data.}
   \item{msel}{index or indices of synthetic data copies for which a summary is produced.}
   \item{method}{a vector of synthesising methods applied to each variable
     in the saved synthesised data.}
