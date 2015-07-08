@@ -1,6 +1,6 @@
 \name{syn.ctree, syn.cart}
 \alias{syn.cart}
-%\alias{syn.cart.bboot}
+%\alias{syn.cartbboot}
 \alias{syn.ctree}
 \title{Synthesis by classification and regression trees (CART)}
 \description{
@@ -8,9 +8,9 @@
   regression trees (without or with bootstrap).
 }
 \usage{
-syn.ctree(y, x, xp, smoothing, proper = FALSE, minbucket, ...)
-syn.cart(y, x, xp, smoothing, proper = FALSE, minbucket, cp = 1e-04, ...)  
-%syn.cart.bboot(y, x, xp, minbucket, cp = 1e-04, ...) 
+syn.ctree(y, x, xp, smoothing, proper = FALSE, minbucket = 5, ...)
+syn.cart(y, x, xp, smoothing, proper = FALSE, minbucket = 5, cp = 1e-04, ...)  
+%syn.cartbboot(y, x, xp, minbucket = 5, cp = 1e-04, ...) 
 }
 \arguments{
   \item{y}{an original data vector of length \code{n}.}
@@ -25,8 +25,9 @@ syn.cart(y, x, xp, smoothing, proper = FALSE, minbucket, cp = 1e-04, ...)
   \item{cp}{complexity parameter. Any split that does not
     decrease the overall lack of fit by a factor of cp is not
     attempted. See \code{\link[rpart]{rpart.control}} for details.}
-
-  \item{\dots}{additional parameters.}
+  \item{\dots}{additional parameters passed to 
+    \code{\link[party]{ctree_control}} for \code{syn.ctree} and 
+    \code{\link[rpart]{rpart.control}} for \code{syn.cart}.}
 }
 \details{
   The procedure for synthesis by a CART model is 
@@ -38,12 +39,30 @@ syn.cart(y, x, xp, smoothing, proper = FALSE, minbucket, cp = 1e-04, ...)
   
   \code{syn.ctree} uses \code{\link{ctree}} function from the
   \pkg{party} package and \code{syn.cart} uses \code{\link{rpart}}
-  function from the \pkg{rpart} package.  They differ, among others, 
-  in a stopping rule for the splitting process.
+  function from the \pkg{rpart} package. They differ, among others, 
+  in a selection of a splitting variable and a stopping rule for the 
+  splitting process.
+  
+  A Guassian kernel smoothing can be applied to continuous variables 
+  by setting smoothing parameter to \code{"density"}. It is recommended 
+  as a tool to decrease the disclosure risk. Increasing \code{minbucket}
+  is another means of data protection. 
+  
+  CART models were suggested for generation of synthetic data by 
+  Reiter (2005) and then evaluated by Drechsler and Reiter (2011).
 }
 \value{A vector of length \code{k} with synthetic values of \code{y}.}
+\references{
+  Reiter, J.P. (2005). Using CART to Generate Partially Synthetic, 
+  Public Use Microdata. \emph{Journal of Official Statistics}, 
+  \bold{21}(3), 441--462.
+  
+  Drechsler, J. and Reiter, J.P. (2011). An empirical evaluation of easily 
+  implemented, nonparametric methods for generating synthetic datasets.
+  \emph{Computational Statistics and Data Analysis}, \bold{55}(12), 3232--3243.
+}
 \seealso{
-  \code{\link{syn}}, \code{\link{syn.surv.ctree}},
+  \code{\link{syn}}, \code{\link{syn.survctree}},
   \code{\link[rpart]{rpart}}, \code{\link[party]{ctree}}
 }
 \keyword{datagen}

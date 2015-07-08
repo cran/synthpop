@@ -1,13 +1,13 @@
-\name{syn.surv.ctree}
-\alias{syn.surv.ctree}
-%\alias{syn.surv.ctree.proper}
+\name{syn.survctree}
+\alias{syn.survctree}
+%\alias{syn.survctree.proper}
 \title{Synthesis of survival time by classification and regression trees (CART)}
 \description{
   Generates synthetic event indicator and time to event data using 
   classification and regression trees (without or with bootstrap).
 }
 \usage{
-syn.surv.ctree(y, yevent, x, xp, proper = FALSE, minbucket, ...)
+syn.survctree(y, yevent, x, xp, proper = FALSE, minbucket = 5, ...)
 }
 \arguments{
   \item{y}{a vector of length \code{n} with original time data.}

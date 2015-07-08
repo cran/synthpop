@@ -12,10 +12,10 @@
  combining rules are applied. 
 }
 \usage{
-compare.fit.synds(object, obs.data, plot = "Z", return.result = TRUE,  
-                  plot.intercept = FALSE, lwd = 1, lty = 1,
-                  lcol = c("#1A3C5A","#4187BF"), dodge.height = .5, 
-                  point.size = 2.5, ...)
+\method{compare}{fit.synds}(object, data, plot = "Z", 
+  return.result = TRUE, return.plot = TRUE, plot.intercept = FALSE, 
+  lwd = 1, lty = 1, lcol = c("#1A3C5A","#4187BF"), 
+  dodge.height = .5, point.size = 2.5, ...)
 
 \method{print}{compare.fit.synds}(x, \dots)
 }
@@ -23,11 +23,13 @@ compare.fit.synds(object, obs.data, plot = "Z", return.result = TRUE,
   \item{object}{an object of type \code{fit.synds} created by fitting a model to 
    synthesised data set using function \code{\link{glm.synds}} or
    \code{\link{lm.synds}}.}
-  \item{obs.data}{the original observed data set.}
+  \item{data}{an original observed data set.}
   \item{plot}{values to be plotted: \code{"Z"} (Z scores) or \code{"coef"}
   (coefficients).}
   \item{return.result}{a logical value indicating whether a table of estimates 
-   should be printed.}
+   should be returned.}
+  \item{return.plot}{a logical value indicating whether a confidence interval
+   plot should be returned.}   
   \item{plot.intercept}{a logical value indicating whether estimates for 
    intercept should be plotted.}
   \item{lwd}{the line type.}  
@@ -39,7 +41,7 @@ compare.fit.synds(object, obs.data, plot = "Z", return.result = TRUE,
    coefficients.} 
   \item{\dots}{additional parameters passed to \code{\link{ggplot}}.}
   
-  \item{x}{an object of class \code{compare.fit.synds.}}
+  \item{x}{an object of class \code{compare.fit.synds}.}
 }
 \details{This function can be used to evaluate whether the model used for 
 synthesis is appropriate for the fitted model. If this is the case the 
@@ -67,6 +69,9 @@ not differ from the estimates from the observed data (\code{Beta} and
    increasing \code{m}.}
   \item{ci.plot}{\code{ggplot} of the the coefficients with confidence 
    intervals for models based on observed and synthetic data.}
+ If \code{return.result} was set to \code{FALSE}, \code{coef.obs} and 
+ \code{coef.obs} are both \code{NULL}. If \code{return.plot} was set 
+ to \code{FALSE}, \code{ci.plot} is \code{NULL}.
 } 
 \seealso{
   \code{\link{summary.fit.synds}}
@@ -74,7 +79,7 @@ not differ from the estimates from the observed data (\code{Beta} and
 \examples{
 ods <- SD2011[,c("sex","age","edu","smoke")]
 s1 <- syn(ods, m = 5)
-f1 <- glm.synds(smoke ~ sex + age + edu, object = s1, family = "binomial")
-compare.fit.synds(f1, ods) 
-compare.fit.synds(f1, ods, plot = "coef")
+f1 <- glm.synds(smoke ~ sex + age + edu, data = s1, family = "binomial")
+compare(f1, ods) 
+compare(f1, ods, plot = "coef")
 }

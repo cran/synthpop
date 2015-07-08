@@ -7,8 +7,8 @@
   ordered polytomous regression (without or with bootstrap).
 }
 \usage{
-syn.polr(y, x, xp, proper = FALSE, nnet.maxit = 100, nnet.trace = FALSE, 
-  nnet.MaxNWts = 10000, ...)
+syn.polr(y, x, xp, proper = FALSE, maxit = 100, trace = FALSE, 
+  MaxNWts = 10000, ...)
 }
 \arguments{
   \item{y}{an original data vector of length \code{n}.}
@@ -16,10 +16,11 @@ syn.polr(y, x, xp, proper = FALSE, nnet.maxit = 100, nnet.trace = FALSE,
   \item{xp}{a matrix (\code{k} x \code{p}) of synthesised covariates.}
   \item{proper}{for proper synthesis (\code{proper = TRUE}) 
     a model is fitted to a bootstrapped sample of the original data.} 
-  \item{nnet.maxit}{the maximum number of iterations for \code{\link[nnet]{nnet}}.}
-  \item{nnet.trace}{switch for tracing optimization for \code{\link[nnet]{nnet}}.}
-  \item{nnet.MaxNWts}{the maximum allowable number of weights for \code{\link[nnet]{nnet}}.}
-  \item{\dots}{additional parameters passed to \code{\link[stats]{optim}} or \code{\link[nnet]{nnet}}.}
+  \item{maxit}{the maximum number of iterations for \code{\link[nnet]{nnet}}.}
+  \item{trace}{switch for tracing optimization for \code{\link[nnet]{nnet}}.}
+  \item{MaxNWts}{the maximum allowable number of weights for \code{\link[nnet]{nnet}}.}
+  \item{\dots}{additional parameters passed to \code{\link[stats]{optim}} 
+    or \code{\link[nnet]{nnet}}.}
 }
 \details{
   Generates synthetic ordered categorical variables by the
@@ -40,10 +41,10 @@ syn.polr(y, x, xp, proper = FALSE, nnet.maxit = 100, nnet.trace = FALSE,
 }
 \value{A vector of length \code{k} with synthetic values of \code{y}.}
 \references{
-  White, I.R., Daniel, R. Royston, P. (2010). Avoiding bias
+  White, I.R., Daniel, R. and Royston, P. (2010). Avoiding bias
   due to perfect prediction in multiple imputation of
   incomplete categorical variables. \emph{Computational
-  Statistics and Data Analysis}, 54, 2267-2275.
+  Statistics and Data Analysis}, \bold{54}, 2267--2275.
 }
 \seealso{
   \code{\link{syn}},\code{\link{syn.polyreg}}

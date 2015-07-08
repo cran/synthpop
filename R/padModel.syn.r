@@ -1,5 +1,5 @@
 padModel.syn <- function(data, method, predictor.matrix, visit.sequence,
-                         nvar, rules, rvalues, factorNA, smoothing, denom) {
+                         nvar, rules, rvalues, factorNA, smoothing, event, denom) {
 
  # Function called by syn to make dummy variables data frame data is 
  # augmented by columns for dummy variables when they are used as predictors. 
@@ -111,6 +111,7 @@ padModel.syn <- function(data, method, predictor.matrix, visit.sequence,
               rvalues = rvalues, 
               categories = categories,
               smoothing = smoothing,
+              event=event,
               denom=denom))
 }
 

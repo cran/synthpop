@@ -257,7 +257,7 @@ syn.pmm <- function (y, x, xp, proper = FALSE, ...)
 
 ###-----augment.syn--------------------------------------------------------
 
-augment.syn <- function(y, x, maxcat=50, ...)
+augment.syn <- function(y, x, ...)
 {
   # define augmented data for stabilizing logreg and polyreg
   # by the ad hoc procedure of White, Daniel & Royston, CSDA, 2010
@@ -272,7 +272,7 @@ augment.syn <- function(y, x, maxcat=50, ...)
   x    <- as.data.frame(x)
   icod <- sort(unique(unclass(y)))
   ki   <- length(icod)
-  if (ki>maxcat) stop(paste("Maximum number of categories (",maxcat,") exceeded", sep=""))
+  # if (ki>maxcat) stop(paste("Maximum number of categories (",maxcat,") exceeded", sep=""))
   p    <- ncol(x)
 
   # skip augmentation if there are no predictors
@@ -322,7 +322,7 @@ syn.logreg <- function(y, x, xp, denom = NULL, denomp = NULL,
   # 3. Compute predicted scores for m.d., i.e. logit-1(X BETA)
   # 4. Compare the score to a random (0,1) deviate, and synthesise.
 
-
+  #browser()
   if (is.null(denom)) {
     aug <- augment.syn(y, x, ...)
     # when no missing data must set xf to augmented version
@@ -352,9 +352,10 @@ syn.logreg <- function(y, x, xp, denom = NULL, denomp = NULL,
     xf   <- cbind(1, as.matrix(xf))
     xp   <- cbind(1, as.matrix(xp))
     den  <- w
-    den[den==1] <- denom
+    denind <- which(den==1)
+    den[denind] <- denom
     yy   <- y/den        #GR denom give then average response
-    yy[den<1]   <- mean(yy[den==1])
+    yy[den<1]   <- mean(yy[denind]) 
     expr <- expression(glm.fit(xf, yy, family = binomial(link = logit), weights=den))
     fit  <- suppressWarnings(eval(expr))
     fit.sum <- summary.glm(fit)
@@ -365,7 +366,6 @@ syn.logreg <- function(y, x, xp, denom = NULL, denomp = NULL,
     }
     p    <- 1/(1 + exp(-(xp %*% beta)))  
     vec  <- rbinom(nrow(p),denomp, p) 
-
 }
   return(vec)
 }
@@ -373,8 +373,8 @@ syn.logreg <- function(y, x, xp, denom = NULL, denomp = NULL,
 
 ###-----syn.polyreg--------------------------------------------------------   
     
-syn.polyreg <- function(y, x, xp, proper = FALSE, nnet.maxit=100, 
-                        nnet.trace=FALSE, nnet.MaxNWts=10000, ...)
+syn.polyreg <- function(y, x, xp, proper = FALSE, maxit = 100, 
+                        trace = FALSE, MaxNWts = 10000, ...)
 {
 # synthesis for categorical response variables by the Bayesian
 # polytomous regression model. See J.P.L. Brand (1999), Chapter 4,
@@ -404,9 +404,8 @@ syn.polyreg <- function(y, x, xp, proper = FALSE, nnet.maxit=100,
   yf  <- aug$y
   w   <- aug$w
   xfy <- cbind.data.frame(yf, xf)  
-  fit <- multinom(formula(xfy), data=xfy, weights=w,
-                  maxit=nnet.maxit, trace=nnet.trace, 
-                  MaxNWts=nnet.MaxNWts, ...)
+  fit <- multinom(formula(xfy), data = xfy, weights = w,
+                  maxit = maxit, trace = trace, MaxNWts = MaxNWts, ...)
   #	xy <- cbind.data.frame(y=y, x=xp) #needed????               
   post <- predict(fit, xp, type = "probs")   
   if (length(y)==1) post <- matrix(post, nrow=1, ncol=length(post)) 
@@ -426,8 +425,8 @@ syn.polyreg <- function(y, x, xp, proper = FALSE, nnet.maxit=100,
 
 ###-----syn.polr-----------------------------------------------------------
 
-syn.polr <- function(y, x, xp, proper = FALSE, nnet.maxit = 100,
-                     nnet.trace = FALSE, nnet.MaxNWts = 10000, ...)
+syn.polr <- function(y, x, xp, proper = FALSE, maxit = 100,
+                     trace = FALSE, MaxNWts = 10000, ...)
 {
   x   <- as.matrix(x)
   xp  <- as.matrix(xp)
@@ -448,11 +447,10 @@ syn.polr <- function(y, x, xp, proper = FALSE, nnet.maxit = 100,
   xfy <- cbind.data.frame(yf, xf)
 
   ## polr may fail on sparse data. We revert to multinom in such cases. 
-  fit <- try(suppressWarnings(polr(formula(xfy), data = xfy, weights=wf,...)), silent=TRUE)
+  fit <- try(suppressWarnings(polr(formula(xfy), data = xfy, weights=wf, ...)), silent = TRUE)
   if (inherits(fit, "try-error")) {
-    fit <- multinom(formula(xfy), data=xfy, weights=wf,
-                    maxit=nnet.maxit, trace=nnet.trace, 
-                    MaxNWts=nnet.MaxNWts, ...)
+    fit <- multinom(formula(xfy), data = xfy, weights = wf,
+                    maxit = maxit, trace = trace, MaxNWts = MaxNWts, ...)
     cat("\tMethod changed to multinomial")
   }
   post  <- predict(fit, xp, type = "probs")
@@ -472,12 +470,17 @@ syn.polr <- function(y, x, xp, proper = FALSE, nnet.maxit = 100,
 
 ###-----syn.sample---------------------------------------------------
 
-syn.sample <- function(y, xp, proper = FALSE, ...) 
+syn.sample <- function(y, xp, smoothing, cont.na, proper = FALSE, ...) 
 {
   # Generates random sample from the observed y's
   # with bootstrap if proper == TRUE
   if (proper==TRUE) y <- sample(y,replace=TRUE)
-  return(sample(y, size=xp, replace=TRUE))
+  yp <- sample(y, size=xp, replace=TRUE)
+  
+  if (smoothing=="density") yp[!(yp %in% cont.na)] <- 
+    syn.smooth(yp[!(yp %in% cont.na)],y[!(y %in% cont.na)])
+  
+  return(yp)
 }
 
 
@@ -494,8 +497,9 @@ syn.passive <- function(data, func)
 ###-----syn.cart-----------------------------------------------------------
 
 syn.cart <- function(y, x, xp, smoothing, proper = FALSE, 
-                     minbucket = minbucket, cp = 1e-04, ...)
+                     minbucket = 5, cp = 1e-04, ...)
 {
+  
   if (proper==TRUE){
     s <- sample(length(y), replace=TRUE)
     x <- x[s,,drop=FALSE]
@@ -504,7 +508,7 @@ syn.cart <- function(y, x, xp, smoothing, proper = FALSE,
   minbucket <- max(1, minbucket)  # safety
   if (!is.factor(y)) {
     fit <- rpart(y ~ ., data = as.data.frame(cbind(y, x)), method = "anova",
-                 control = rpart.control(minbucket = minbucket, cp = cp), ...)
+                 minbucket = minbucket, cp = cp, ...)
     # get leaf number for observed data
     leafnr  <- floor(as.numeric(row.names(fit$frame[fit$where,])))
     # replace yval with leaf number in order to predict later node number 
@@ -518,27 +522,12 @@ syn.cart <- function(y, x, xp, smoothing, proper = FALSE,
       donors        <- y[leafnr==j] # values of y in a leaf
       new[nodes==j] <- resample(donors,size=sum(nodes==j),replace=T)
     }
-    if (smoothing=="density"){
-      ys <- 1:length(new)
-      maxfreq <- which.max(table(new))
-      maxcat  <- as.numeric(names(table(new))[maxfreq])
-      if (table(new)[maxfreq]/sum(table(new))>.7) ys <- which(new!=maxcat)
-      if (10*table(new)[length(table(new))-1] < 
-        tail(table(new),n=1)-table(new)[length(table(new))-1]){
-        ys   <- ys[-which(new==max(y))]  
-        maxy <- max(y)
-      }
-      densbw  <- density(new[ys],width="SJ")$bw
-      new[ys] <- rnorm(n=length(new[ys]),mean=new[ys],sd=densbw)
-      if (!exists("maxy")) maxy <- max(y) + densbw
-      new[ys] <- pmax(pmin(new[ys],maxy),min(y))
-      new[ys] <- round(new[ys],max(sapply(y,decimalplaces)))
-    }
+    if (smoothing=="density") new <- syn.smooth(new, y) 
     #donor <- lapply(nodes, function(s) y[leafnr == s])
     #new   <- sapply(1:length(donor),function(s) resample(donor[[s]], 1))
   } else {
     fit   <- rpart(y ~ ., data = as.data.frame(cbind(y, x)), method = "class",
-                 control = rpart.control(minbucket = minbucket, cp = cp), ...)
+                   minbucket = minbucket, cp = cp, ...)
     nodes <- predict(object = fit, newdata = xp)
     new   <- apply(nodes, MARGIN=1, FUN=function(s) resample(colnames(nodes),size=1,prob=s))
     new   <- factor(new,levels=levels(y))                                        
@@ -549,7 +538,7 @@ syn.cart <- function(y, x, xp, smoothing, proper = FALSE,
 
 ###-----syn.ctree----------------------------------------------------------
 
-syn.ctree <- function(y, x, xp, smoothing, proper = FALSE, minbucket = minbucket, ... )
+syn.ctree <- function(y, x, xp, smoothing, proper = FALSE, minbucket = 5, ... )
 { 
   if (proper==TRUE){
     s <- sample(length(y),replace=T)
@@ -560,8 +549,8 @@ syn.ctree <- function(y, x, xp, smoothing, proper = FALSE, minbucket = minbucket
   for (i in which(sapply(x,class)!=sapply(xp,class))) xp[,i] <-
   eval(parse(text=paste0("as.",class(x[,i]),"(xp[,i])",sep="")))
   # Fit a tree
-  datact     <- ctree(y ~ ., data=as.data.frame(cbind(y,x)),
-                   controls=ctree_control(minbucket=minbucket), ...)
+  datact     <- ctree(y ~ ., data=as.data.frame(cbind(y,x)), 
+                   controls=ctree_control(minbucket=minbucket, ...))
   fit.nodes  <- where(datact)
   nodes      <- unique(fit.nodes)
   no.nodes   <- length(nodes)
@@ -577,30 +566,14 @@ syn.ctree <- function(y, x, xp, smoothing, proper = FALSE, minbucket = minbucket
                                       replace=T)
   }
   new <- y[newrowno]
-  
-  if (!is.factor(y) & smoothing=="density"){
-    ys <- 1:length(new)
-    maxfreq <- which.max(table(new))
-    maxcat  <- as.numeric(names(table(new))[maxfreq])
-    if (table(new)[maxfreq]/sum(table(new))>.7) ys <- which(new!=maxcat)
-    if (10*table(new)[length(table(new))-1] < tail(table(new),n=1)-table(new)[length(table(new))-1]){
-      ys   <- ys[-which(new==max(y))]  
-      maxy <- max(y)
-    }   
-    densbw  <- density(new[ys],width="SJ")$bw
-    new[ys] <- rnorm(n=length(new[ys]),mean=new[ys],sd=densbw)
-    if (!exists("maxy")) maxy <- max(y) + densbw
-    new[ys] <- pmax(pmin(new[ys],maxy),min(y))
-    new[ys] <- round(new[ys],max(sapply(y,decimalplaces)))
-  }
+  if (!is.factor(y) & smoothing=="density") new <- syn.smooth(new,y)
   return(new)
 }
 
 
-###-----surv.ctree---------------------------------------------------------
+###-----survctree---------------------------------------------------------
 
-syn.surv.ctree <- function(y, yevent, x, xp, proper = FALSE, 
-                           minbucket = minbucket, ...)
+syn.survctree <- function(y, yevent, x, xp, proper = FALSE, minbucket = 5, ...)
 # time, event - data column numbers
 {      
   if (proper==TRUE){
@@ -609,10 +582,10 @@ syn.surv.ctree <- function(y, yevent, x, xp, proper = FALSE,
     x <- x[s,,drop=FALSE]                        
     yevent <- yevent[s]
   }
-  
+  browser()
   # Fit a tree
   datact     <- ctree(Surv(y,yevent) ~ ., data=as.data.frame(cbind(y,yevent,x)),
-                   controls=ctree_control(minbucket = minbucket), ...)
+                      controls=ctree_control(minbucket = minbucket, ...))
   fit.nodes  <- where(datact)
   nodes      <- unique(fit.nodes)
   no.nodes   <- length(nodes)
@@ -632,10 +605,10 @@ syn.surv.ctree <- function(y, yevent, x, xp, proper = FALSE,
 }
 
 
-###-----syn.cart.bboot-----------------------------------------------------
+###-----syn.cartbboot-----------------------------------------------------
 
-syn.cart.bboot <- function(y, x, xp, proper = FALSE, 
-                           minbucket=minbucket, cp=1e-04,...) 
+syn.cartbboot <- function(y, x, xp, proper = FALSE, 
+                           minbucket = 5, cp = 1e-04, ...) 
 {
   if (proper==TRUE){
     s <- sample(length(y),replace=TRUE)
@@ -646,7 +619,7 @@ syn.cart.bboot <- function(y, x, xp, proper = FALSE,
   minbucket <- max(1, minbucket) 
   if (!is.factor(y)) {
     fit <- rpart(y ~ ., data = as.data.frame(cbind(y, x)), method = "anova",
-               control = rpart.control(minbucket = minbucket, cp = cp), ...)
+                 minbucket = minbucket, cp = cp, ...)
     leafnr   <- floor(as.numeric(row.names(fit$frame[fit$where,])))
     fit$frame$yval <- as.numeric(row.names(fit$frame))
     nodes    <- predict(object = fit, newdata = xp)
@@ -656,7 +629,7 @@ syn.cart.bboot <- function(y, x, xp, proper = FALSE,
     new      <- sapply(1:length(donor), function(s) resample(donor[[s]],1,p=donor.p[[s]]))
   } else {
     fit <- rpart(y ~ ., data = as.data.frame(cbind(y, x)), method = "class",
-               control = rpart.control(minbucket = minbucket, cp = cp), ...)
+                 minbucket = minbucket, cp = cp, ...)
     fit$frame$yval <- as.numeric(row.names(fit$frame))
     pred.cc    <- predict(object=fit,newdata=xp,type="matrix")[,2:(nlevels(y)+1)]   # cc - class counts
     pred.nodes <- predict(object=fit,newdata=xp,type="vector")
@@ -675,7 +648,7 @@ is.passive <- function(string) return("~"==substring(string,1,1))
 
   
 ###-----resample-----------------------------------------------------------
-# used in syn.cart() and syn.cart.bboot() instead of sample() 
+# used in syn.cart() and syn.cartbboot() instead of sample() 
 # for safety reasons, i.e. to avoid sampling from 1:x when length(x)==1
 resample   <- function(x, ...) x[sample.int(length(x),...)]
 
@@ -714,3 +687,26 @@ addXfac <- function(x,...){
   add <- factor(rowSums(df))
   return(add)
   }
+  
+  
+###-----syn.smooth--------------------------------------------------------- 
+syn.smooth <- function(ysyn, yobs){
+  ys <- 1:length(ysyn)
+  # exclude from smoothing if freq for a single value higher than 70% 
+  maxfreq <- which.max(table(ysyn))
+  maxcat  <- as.numeric(names(table(ysyn))[maxfreq])
+  if (table(ysyn)[maxfreq]/sum(table(ysyn))>.7) ys <- which(ysyn!=maxcat)
+  # exclude from smoothing if data are top-coded - approximate check
+  if (10*table(ysyn)[length(table(ysyn))-1] <
+    tail(table(ysyn),n=1)-table(ysyn)[length(table(ysyn))-1]){
+    ys   <- ys[-which(ysyn==max(yobs))]
+    maxy <- max(yobs)
+  }
+  densbw  <- density(ysyn[ys],width="SJ")$bw
+  ysyn[ys] <- rnorm(n=length(ysyn[ys]),mean=ysyn[ys],sd=densbw)
+  if (!exists("maxy")) maxy <- max(yobs) + densbw
+  ysyn[ys] <- pmax(pmin(ysyn[ys],maxy),min(yobs))
+  ysyn[ys] <- round(ysyn[ys],max(sapply(yobs,decimalplaces)))      
+  return(ysyn)
+}
+

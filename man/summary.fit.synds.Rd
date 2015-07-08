@@ -5,7 +5,7 @@
 \description{Combines the results of models fitted to each of the \code{m} 
   synthetic data sets.}
 \usage{
-\method{summary}{fit.synds}(object, population.inference = FALSE, \dots)
+\method{summary}{fit.synds}(object, population.inference = FALSE, msel = NULL, \dots)
 
 \method{print}{summary.fit.synds}(x, \dots)
 }
@@ -17,6 +17,9 @@
   \item{population.inference}{a logical value indicating whether inference 
    should be made to population quantities. If \code{FALSE} inference is made
    to original data quantities.}
+  \item{msel}{index or indices of synthetic data copies for which summaries 
+    of fitted models are to be produced. If \code{NULL} (default) a summary 
+    of combined estimates is produced.}
   \item{\dots}{additional parameters.}
   \item{x}{an object of class \code{summary.fit.synds}.}
 }
@@ -48,9 +51,15 @@ synthesis (for details see Raab et al. (submitted 2014)).}
    Z scores (\code{se(Z.syn)}).} 
   \item{n}{a number of cases in the original data.} 
   \item{k}{a number of cases in the synthesised data.}
+  \item{analyses}{\code{summary.glm} or \code{summary.lm} object respectively
+    or a list of \code{m} such objects.} 
+  \item{msel}{index or indices of synthetic data copies for which summaries 
+    of fitted models are produced. If \code{NULL} a summary of combined 
+    estimates is produced.}
 }
+
 \references{
-Raab, G.M., Nowok, B., Dibben, C. (submitted 2014). 
+Raab, G.M., Nowok, B. and Dibben, C. (submitted 2014). 
 A simplified approach to synthetic data. 
 \url{http://arxiv.org/abs/1409.0217}
 }
@@ -62,13 +71,13 @@ ods <- SD2011[1:2000,c("sex","age","edu","ls","smoke")]
   
 ### simple synthesis
 s1 <- syn(ods, m = 5)
-f1 <- glm.synds(smoke ~ sex + age + edu + ls, object = s1, family = "binomial")
+f1 <- glm.synds(smoke ~ sex + age + edu + ls, data = s1, family = "binomial")
 summary(f1)
 summary(f1, population.inference = TRUE)
   
 ### proper synthesis
 s2 <- syn(ods, m = 5, proper = TRUE)
-f2 <- glm.synds(smoke ~ sex + age + edu + ls, object = s2, family = "binomial")
+f2 <- glm.synds(smoke ~ sex + age + edu + ls, data = s2, family = "binomial")
 summary(f2)
 summary(f2, population.inference = TRUE)
 }

@@ -8,21 +8,12 @@ syn <- function(data,
                 method = vector("character",length=ncol(data)),
                 visit.sequence = (1:ncol(data)),
                 predictor.matrix = NULL,  
-                m = 1, 
-                k = nrow(data),
-                proper = FALSE, 
-                minnumlevels = 5,
-                maxfaclevels = 60,
-                rules = as.list(rep("",ncol(data))),                                    
-                rvalues = as.list(rep(NA,ncol(data))),                                  
-                cont.na = as.list(rep(NA,ncol(data))),
-                semicont = as.list(rep(NA,ncol(data))),
-                event = rep(0,ncol(data)),
-                smoothing = rep("",ncol(data)), 
-                denom = rep(0,ncol(data)),
-                minbucket = 5,    
-                drop.not.used = TRUE, 
-                drop.pred.only = FALSE,                                            
+                m = 1, k = nrow(data), proper = FALSE, 
+                minnumlevels = 5, maxfaclevels = 60,
+                rules = NULL, rvalues = NULL,                                  
+                cont.na = NULL, semicont = NULL,
+                smoothing = NULL, event = NULL, denom = NULL,
+                drop.not.used = TRUE, drop.pred.only = FALSE,                                            
                 default.method = c("normrank","logreg","polyreg","polr"),
                 diagnostics = FALSE,
                 print.flag = TRUE,
@@ -37,18 +28,21 @@ syn <- function(data,
 #----------------------------------------------------------------------
 # set default method for everything to ctree and to blank (which will get defaults) if method is "parametric"
 if (all(method=="")) method="ctree"
-#else if (length(method)==1 && method=="parametric") method=rep("",dim(data)[2])
-# change vectors to lists
-if (!is.list(rules))    rules <- as.list(rules)
-if (!is.list(cont.na))   cont.na <- as.list(cont.na)
-if (!is.list(semicont)) semicont <- as.list(semicont)
-if (!is.list(rvalues))  rvalues <- as.list(rvalues)
+# else if (length(method)==1 && method=="parametric") method=rep("",dim(data)[2])
 
 if (!is.null(attr(data,"filetype")) && attr(data,"filetype")=="sav") {
   var.lab <- attr(data,"variable.labels")
   val.lab <- attr(data,"label.table")
 } else {
   var.lab <- val.lab <- NULL
+}
+
+# if visit sequence includes variable names change them into column indecies 
+if (is.character(visit.sequence)) {
+  nametoind <- match(visit.sequence, colnames(data))
+    if (any(is.na(nametoind))) stop("Unrecognized variable(s) in visit.sequence: ", 
+      paste(visit.sequence[is.na(nametoind)],collapse=", "), call. = FALSE)
+    else visit.sequence <- nametoind
 }
 
 
@@ -66,7 +60,7 @@ check.visit.sequence.syn <- function(setup){
  # not in the visit sequence won't be synthesised
  
  # stop if variable in visit.sequence more than once
- if (any(duplicated(vis)))  stop("\n Visit sequence includes repeated variable numbers\n")
+ if (any(duplicated(vis))) stop("Visit sequence includes repeated variable names/numbers\n", call. = FALSE)
 
  # remove any visitSequnce members outside 1:nvar
  if (any(!(vis %in% 1:nvar))) {
@@ -108,7 +102,8 @@ check.visit.sequence.syn <- function(setup){
  for (j in which(denom[vis]>0)){ 
    denom.pos <- match(denom[vis][j],vis)
    if (j < denom.pos) stop("Denominator ",varnames[denom[vis][j]]," for ",
-                           varnames[vis[j]],"must be synthesisied before it.\n")
+                           varnames[vis[j]]," must be synthesisied before it\n",
+                           call. = FALSE)
  }
  #!---
                                                                         
@@ -171,32 +166,30 @@ check.predictor.matrix.syn <- function(setup){
  for (j in which(method=="sample")) pred[j,] <- 0
  
  # removing survival time from predictors
- for (j in which(method=="surv.ctree")) pred[,j] <- 0
+ for (j in which(method=="survctree")) pred[,j] <- 0
 
  # removing event indicator from predictors
- for (j in which(method=="surv.ctree" & event>0)) pred[,event[j]] <- 0
+ for (j in which(method=="survctree" & event>0)) pred[,event[j]] <- 0
                                                                      #GRdenom new lines
  #  remove denom from prediction of its numerator
-    for  (j in which(method=="logreg"))  {
-       if (denom[j]>0) pred[j,denom[j]]<-0
+    for  (j in which(method=="logreg")) {
+      if (denom[j]>0) pred[j,denom[j]] <- 0
     }
                                                                     # to here
  # checking consistency between visit.sequence and predictor matrix
  # provided by a user: dropping from predictors variables that are
  # not already synthesised
-
- preddel <- which((pred[,vis.syn]==1 & pred.dt[,vis.syn]==0),arr.ind=TRUE)
-
-if (length(vis)>1) {
- 	pred[,vis.syn]  <- ifelse((pred[,vis.syn]==1 & pred.dt[,vis.syn]==0),
-                           0,pred[,vis.syn])
- 	if(nrow(preddel)>0) cat(paste("Not synthesised predictor ",
+ preddel <- which((pred[,vis.syn,drop=FALSE]==1 & 
+                   pred.dt[,vis.syn,drop=FALSE]==0),arr.ind=TRUE)
+ if (length(vis)>1) {
+ 	 pred[,vis.syn]  <- ifelse((pred[,vis.syn]==1 & pred.dt[,vis.syn]==0),
+                              0,pred[,vis.syn])
+ 	 if(nrow(preddel)>0) cat(paste("Not synthesised predictor ",
                          varnames[vis.syn][preddel[,2]],
                          " removed from predictor.matrix for variable ",
                          varnames[preddel[,1]],".\n",sep=""))
-
-}
-setup$predictor.matrix <- pred
+ }
+ setup$predictor.matrix <- pred
  setup$visit.sequence   <- vis
  return(setup)
 }
@@ -236,7 +229,7 @@ check.method.syn <- function(setup, data, proper) {
 	       else if(nlevels(y) > 2)  method[j] <- default.method[3]
 	       else if(is.logical(y))   method[j] <- default.method[2]
 	       else if(nlevels(y)!=1) stop("Variable ",j," ",varnames[j],
-		 " type not numeric or factor.") # to prevent a constant values failing
+		     " type not numeric or factor.") # to prevent a constant values failing
 	     }
 	   }
 	}
@@ -249,10 +242,10 @@ check.method.syn <- function(setup, data, proper) {
       c("","sample","sample.proper",
       "norm","norm.proper","logreg","logreg.proper")))))
    {
-     cat('Method "',method[j],
-     '" is not valid for a variable without predictors (',
-     names(data)[j],').\nMethod has been changed to "sample".\n\n',sep="")
      method[j] <- "sample"
+     if (print.flag==TRUE) cat('Method "',method[j],
+     '" is not valid for a variable without predictors (',
+     names(data)[j],')\nMethod has been changed to "sample"\n\n',sep="")
    }
  }
  
@@ -266,47 +259,54 @@ check.method.syn <- function(setup, data, proper) {
 
  # type checks on built-in  methods 
 
-for(j in vis) {
+ for(j in vis) {
  	 y     <- data[,j]
    vname <- colnames(data)[j]
    mj    <- method[j]
- mlist <- list(m1 = c("logreg","polyreg","polr"),
-               m2 = c("norm","normrank","surv.ctree"),
-               m3 = c("norm","normrank","surv.ctree","logreg"))
+   mlist <- list(m1 = c("logreg","polyreg","polr"),
+                 m2 = c("norm","normrank","survctree"),
+                 m3 = c("norm","normrank","survctree","logreg"))
    # In case of type mismatch stop execution
 
 #                                                       #GRdenom lines changed
 # check for logistic with denominator
 # 
    if (denom[j]>0) {
-   if (!(mj %in% c("logreg"))) stop("Variable ", vname," has denominator ",colnames(data[denom[j]]),
-                               " but method ",mj," should be logreg\n")
+     if (!(mj %in% c("logreg"))) {
+       method[j] <- "logreg"
+       cat("Variable ", vname," has denominator (", colnames(data[denom[j]]), 
+       ") and method ", mj, " has been changed to logreg\n", sep="")
+     }
+   #if (!(mj %in% c("logreg"))) stop("Variable ", vname," has denominator (",
+   #  colnames(data[denom[j]]), ") and method should be set to logreg and not ",mj,"\n", 
+   #  call. = FALSE)
 #
 #  check all integers
 #
-  if (!( (is.integer(y) | all((y-round(y))==0)) & 
-            (is.integer(data[denom[j]]) | all((data[denom[j]]-round(data[denom[j]])==0))) )) 
-     stop("Variable ", vname," and denominator ",colnames(data[denom[j]]),
-         " must be integers\n")
-  if (any((data[denom[j]]-y)< 0)) stop("Variable ", vname," must be less than or equal denominator ",colnames(data[denom[j]]),
-                            "\n")
+  #browser()
+  if (!((is.integer(y) | all((y-round(y))==0,na.rm=TRUE)) &  #!!!!!! address missing data issue
+     (is.integer(data[denom[j]]) | all((data[denom[j]]-round(data[denom[j]])==0),na.rm=TRUE)))) #!!!!!! address missing data issue   
+     stop("Variable ", vname," and denominator ", colnames(data[denom[j]]),
+     " must be integers\n", call. = FALSE)
+   if (any((data[denom[j]]-y)< 0,na.rm=TRUE)) stop("Variable ", vname,    #!!!!!! address missing data issue
+     " must be less than or equal denominator ",
+     colnames(data[denom[j]]),"\n", call. = FALSE)
+   } else {
+     if (is.numeric(y) & (mj %in% mlist$m1)){
+   	   stop('Type mismatch for variable ', vname,
+         '.\nSyhthesis method "', mj, '" is for categorical data.',
+         sep="", call. = FALSE)
+     } else if (is.factor(y) & nlevels(y) == 2 & (mj %in% mlist$m2)){
+       stop('Type mismatch for variable ', vname,
+       	 '.\nSyhthesis method "', mj, '" is not for factors.',
+         sep="", call. = FALSE)
+     } else if (is.factor(y) & nlevels(y) > 2 & (mj %in% mlist$m3)){
+       stop('Type mismatch for variable ', vname,
+    	   '.\nSyhthesis method "', mj,
+         '" is not for factors with three or more levels.',
+         sep="", call. = FALSE)
+     }                                               
    }
-   else{
-      if (is.numeric(y) & (mj %in% mlist$m1)){
-   	 stop('Type mismatch for variable ', vname,
-      		'.\n  Syhthesis method "', mj, '" is for categorical data.',sep="")
-      }
-      else if (is.factor(y) & nlevels(y) == 2 & (mj %in% mlist$m2)){
-        stop('Type mismatch for variable ', vname,
-        			'.\n  Syhthesis method "', mj, '" is not for factors.')
-      }
-      else if (is.factor(y) & nlevels(y) > 2 & (mj %in% mlist$m3)){
-        stop('Type mismatch for variable ', vname,
-        			'.\n  Syhthesis method "', mj,
-        			'" is not for factors with three or more levels.')
-      }                                               # to here
-   }
-
  }
 
  # remove constant variables but leave passive variables untouched
@@ -352,15 +352,15 @@ for(j in vis) {
     }
  }
  # chck survival method	and events are consistent
- if (any(method=="surv.ctree")) {
+ if (any(method=="survctree")) {
    for(j in vis){   # checks for survival variables
      y     <- data[,j]
      vname <- colnames(data)[j]
      mj    <- method[j]
-     if (mj=="surv.ctree") {
+     if (mj=="survctree") {
    	   if (!is.numeric(y)) stop("Variable ",vname,
          " should be a numeric survival time.")
-    	 if (any(y < 0)) stop("Variable ",vname,
+    	 if (any(!is.na(y) & y < 0)) stop("Variable ",vname,          #!!!!!!!!!!!! BN added !is.na 
          " should be a non-negative survival time.")
 
        if (is.na((match(event[j],1:nvar)))) {
@@ -497,8 +497,8 @@ check.rules.syn <- function(setup, data) {
    }
  }
  any.nonmissing <- sapply(nonmissing, function(x) any(x>0))
- if (any(any.nonmissing)>0) cat("Unexpected values (not obeying the rules) found for variable(s): ",
-     paste(varnames[any.nonmissing>0],collapse=" "),".")
+ if (any(any.nonmissing)>0) cat("\nUnexpected values (not obeying the rules) found for variable(s): ",
+     paste(varnames[any.nonmissing>0],collapse=", "),".\n",sep="")
 
  # Check visit sequence 
  # all variables used in missing data rules have to be synthesised BEFORE 
@@ -554,6 +554,37 @@ check.rules.syn <- function(setup, data) {
 ##-----------------end of--check.rules.syn----------------------------
 
 
+##------------------namedlist------------------------------------
+# check args that should be provided as a named list 
+# and create list with elements for each variable 
+ namedlist <- function(x, varnames=colnames(data), nvars=length(varnames), 
+                       missval=NA, argname, argdescription="", asvector=FALSE){
+   if (is.null(x)) {
+     x <- as.list(rep(missval,nvars))
+   } else if (!is.list(x) | any(names(x)=="") | is.null(names(x))) {
+     stop("Argument '", argname,"' must be a named list with names of selected ", 
+     argdescription, " variables.", call. = FALSE)  
+   } else {
+     x.missval <- as.list(rep(missval,nvars))
+     x.ind <- match(names(x), varnames)
+     if (any(is.na(x.ind))) stop("Unrecognized variable names in '", 
+       argname,"': ",paste(names(x)[is.na(x.ind)],collapse=", "), call. = FALSE)
+     # For 'event' and 'denom' check if denominators' name exist and 
+     # change them to column indecies   
+     if (argname %in% c("denom","event") & is.character(argname)){
+       denom.ind <- lapply(x,match,varnames)
+       if (any(is.na(denom.ind))) stop("Unrecognized variable(s) provided as ",argname,"(s): ", 
+       paste(unlist(x)[is.na(denom.ind)],collapse=", "), call. = FALSE) 
+       x <- denom.ind
+     }
+     x.missval[x.ind] <- x
+     x <- x.missval 
+   }
+   if (asvector) x <- unlist(x)
+   return(x)  
+ }
+##-----------------end of--namedlist-----------------------------
+
 
 #----------------------- now syn continues here ----------------------
 # Basic checks of provided parameters:
@@ -571,12 +602,6 @@ check.rules.syn <- function(setup, data) {
  if(!(is.matrix(data) | is.data.frame(data)))
     stop("Data should be a matrix or data frame.")
  if(nvar < 2) stop ("Data should contain at least two columns.")
- if(length(event)!=nvar) stop("'event' is of length ",length(event),
-                              " and should be of length ",nvar,".",sep="")
- if(length(denom)!=nvar) stop("'denom' is of length ",length(denom),                  
-                              " and should be of length ",nvar,".",sep="")
- if(length(smoothing)!=nvar) stop("'smoothing' is of length ",length(smoothing),                  
-                                  " and should be of length ",nvar,".",sep="")
                               
  # S U B S A M P L E   S I Z E
  if(k!=nrow(data) & print.flag==TRUE) {
@@ -603,7 +628,8 @@ check.rules.syn <- function(setup, data) {
  # if user specifies multiple methods, check the length of the argument
  # methods must be given for all columns in the data
  if (length(method)!=nvar) stop(paste("The length of method (",length(method),
-    ") does not match the number of columns in the data (",nvar,").",sep=""))
+    ") does not match the number of columns in the data (",nvar,").",sep=""), 
+    call.=FALSE)
 
  # P R E D I C T O R   M A T R I X
  if(!is.null(predictor.matrix)){
@@ -617,21 +643,38 @@ check.rules.syn <- function(setup, data) {
  data     <- as.data.frame(data)
  varnames <- dimnames(data)[[2]]
 
+ # Named lists: check args and create list with elements for each variables 
  # C O N T I N O U S  V A R S  W I T H  M I S S I N G  D A T A  C O D E S
  # S E M I - C O N T I N O U S  V A R S 
- # check length of missing data codes for continuous variable
- if (length(cont.na)!=nvar)                                                               #BN13/11 moved from check rules
-   stop(paste("The length of 'cont.na' (",length(cont.na),                                 #BN13/11 moved from check rules
-              ") does not match the number of columns in the data (",nvar,").",sep=""))  #BN13/11 moved from check rules
- if (length(semicont)!=nvar)                                                             #BN13/11
-  stop(paste("The length of 'semicont' (",length(semicont),                              #BN13/11   
-             ") does not match the number of columns in the data (",nvar,").",sep=""))   #BN13/11     
+ semicont <- namedlist(semicont, missval=NA, argname="semicont", 
+   argdescription="semi-continuous")
+ cont.na  <- namedlist(cont.na, missval=NA, argname="cont.na", 
+   argdescription="")
  # combine cont.na and semicont lists  
  cont.na.ini <- cont.na
  cont.na <- mapply(c, cont.na, semicont, SIMPLIFY=FALSE)
  cont.na <- lapply(cont.na, unique)
-
-
+ # R U L E S  and  R V A L U E S 
+ rules   <- namedlist(rules, missval="", argname="rules", argdescription="")
+ rvalues <- namedlist(rvalues, missval=NA, argname="rvalues", argdescription="")
+ # S M O O T H I N G
+ smoothing <- namedlist(smoothing, missval="", argname="smoothing", 
+   argdescription="", asvector=TRUE)
+ if (any(smoothing!="")){
+   varsmoothind <- which(smoothing!="")
+   varnumind    <- which(sapply(data,is.numeric))
+   smoothnumind <- match(varsmoothind,varnumind)
+   if (any(is.na(smoothnumind)) & print.flag == TRUE)
+   cat("\nSmoothing can only be applied to numeric variables.\nNo smoothing will be applied to variable(s): ",
+     paste(varnames[varsmoothind[is.na(smoothnumind)]],collapse=", "),"\n",sep="")   
+   smoothing[varsmoothind[is.na(smoothnumind)]] <- "" 
+ }
+ 
+ # D E N O M   
+ denom <- namedlist(denom, missval=0, argname="denom", asvector=TRUE)
+ # E V E N T
+ event <- namedlist(event, missval=0, argname="event", asvector=TRUE)
+ 
  # Perform various validity checks on the specified arguments
  setup <- list(visit.sequence = visit.sequence,
                method = method,
@@ -688,7 +731,7 @@ check.rules.syn <- function(setup, data) {
        else setup$method[j] <- default.method[3]
   	   cat("Method for ",varnames[j]," changed to ",setup$method[j],"\n\n")
      }
-     }
+   }
  }
 
  # Modifies a factor by turning NA into an extra level
@@ -698,27 +741,29 @@ check.rules.syn <- function(setup, data) {
  } 
 
  # Identify any factors with > maxfaclevels levels that are in visit.sequence
- too.many.levels <- sapply(data, function(x) length(levels(x))) > maxfaclevels
+ no.fac.levels <- sapply(data, function(x) length(levels(x)))
+ too.many.levels <- no.fac.levels > maxfaclevels
  if (any(inpred & too.many.levels)) {
-   cat("Factor(s) with more than",maxfaclevels,"levels:",
-     paste0(varnames[inpred & too.many.levels],collapse=", "),
-     "\nIn case of computational problems, consider removing them from prediction matrix or combining categories.\n\n")
+   stop("Factor(s) with more than ",maxfaclevels," levels: ",
+     paste0(varnames[inpred & too.many.levels]," (",
+     no.fac.levels[inpred & too.many.levels],")",collapse=", "), call. = FALSE,
+     "\nYou can increase 'maxfaclevels' to continue but it may cause computational problems. \nConsider removing factor(s) from prediction matrix or combining categories.\n\n")
  }
  
 #---
 
- setup                     <- check.method.syn(setup, data, proper)
- if (any(rules!="")) setup <- check.rules.syn (setup, data)
+ setup  <- check.method.syn(setup, data, proper)
+ if (any(rules!="")) setup <- check.rules.syn(setup, data)
 
- method          <- setup$method
+ method           <- setup$method
  predictor.matrix <- setup$predictor.matrix
  visit.sequence   <- setup$visit.sequence
- event           <- setup$event
- rules           <- setup$rules
- rvalues         <- setup$rvalues
+ event            <- setup$event
+ rules            <- setup$rules
+ rvalues          <- setup$rvalues
  cont.na          <- setup$cont.na
  default.method   <- setup$default.method
- denom           <- setup$denom                       #GRdenom new
+ denom            <- setup$denom                       #GRdenom new
 
  # Not used variables are identified and dropped if drop.not.used==T
  # reclculate inpred & notevent in case they have changed after
@@ -737,22 +782,27 @@ check.rules.syn <- function(setup, data) {
  out <- !inpred & notevent & notsynth
 
  if (any(out) & print.flag==TRUE) {
-   cat("Variable(s):",paste0(varnames[out],collapse=", "),
+   cat("\nVariable(s):",paste0(varnames[out],collapse=", "),
        "not synthesised or used in prediction.\n",sep=" ")
    if (drop.not.used==T) cat("The variable(s) will be removed from data and not saved in synthesised data.\n\n")
    else cat("CAUTION: The synthesised data will contain the variable(s) unchanged.\n\n")
  }
-   
+
+#browser()   
 # remove columns not used from data and replace predictor matrix, visit sequence, nvar and others
  if (any(out) & drop.not.used==T){
    if(sum(!out)==0) stop("No variables left to be synthesised") ######to stop if all data excluded 
    newnumbers       <- rep(0,nvar)
    newnumbers[!out] <- 1:sum(!out)
-   visit.sequence    <- newnumbers[visit.sequence]
-   visit.sequence    <- visit.sequence[!visit.sequence==0]
-   predictor.matrix  <- predictor.matrix[!out,!out]
+   visit.sequence   <- newnumbers[visit.sequence]
+   visit.sequence   <- visit.sequence[!visit.sequence==0]
+   predictor.matrix <- predictor.matrix[!out,!out]
+   
    event[event!=0]  <- newnumbers[event[event!=0]]
    event            <- event[!out]
+   denom[denom!=0]  <- newnumbers[denom[denom!=0]]
+   denom            <- denom[!out]
+   
    data             <- data[,!out]
    nvar             <- sum(!out)
    method           <- method[!out]
@@ -764,9 +814,10 @@ check.rules.syn <- function(setup, data) {
   	 if (cl=="character") data[,1]<-as.character(data[,1])
   	 names(data)<-varnames
    }
-   cont.na           <- cont.na[!out]
-   cont.na.ini        <- cont.na.ini[!out]        #BN13/11  
+   cont.na          <- cont.na[!out]
+   cont.na.ini      <- cont.na.ini[!out]      #BN13/11  
    semicont         <- semicont[!out]         #BN13/11  
+   smoothing        <- smoothing[!out]
    rules            <- rules[!out]
    rvalues          <- rvalues[!out]
    var.lab          <- var.lab[!out]
@@ -780,7 +831,7 @@ check.rules.syn <- function(setup, data) {
    }
    else inpred <- ispredictor<-rep(0,sqrt(length(predictor.matrix))) 
 
-   notinvs  <- is.na(match(1:nvar,visit.sequence))  # if not in visit.sequence
+   notinvs  <- is.na(match(1:nvar,visit.sequence)) # if not in visit.sequence
    notsynth <- notinvs | (!notinvs & method=="")   # if not synthesised
    notevent <- is.na(match(1:nvar,event))          # if not in event list
  }
@@ -798,16 +849,16 @@ check.rules.syn <- function(setup, data) {
      cat("CAUTION: The synthesised data will contain the variable(s) unchanged.\n\n")
    }
  } 
-                                                      #  GR condition added
+                                                     #  GR condition added
  if (sum(predictor.matrix)>0) {
 	 pm <- padMis.syn(data, method, predictor.matrix, visit.sequence,
-			   nvar, rules, rvalues, default.method, cont.na, smoothing, denom)
+			   nvar, rules, rvalues, default.method, cont.na, smoothing, event, denom)
 
 	 # Pad the Syhthesis model with dummy variables for the factors
 	 # p <- padModel.syn(data, method, predictor.matrix, visit.sequence,
 	 #                   nvar, rules, rvalues)
 	 p  <- padModel.syn(pm$data, pm$method, pm$predictor.matrix, pm$visit.sequence,
-			   pm$nvar, pm$rules, pm$rvalues, pm$factorNA, pm$smoothing, pm$denom)
+			   pm$nvar, pm$rules, pm$rvalues, pm$factorNA, pm$smoothing, pm$event, pm$denom)
    
    if (k != dim(data)[1]){
    	 p$syn <- p$syn[sample(1:dim(data)[1],k,replace=TRUE),]
@@ -821,7 +872,8 @@ check.rules.syn <- function(setup, data) {
               method = method, 
               visit.sequence = visit.sequence, 
               rules = rules,
-              rvalues = rvalues, 
+              rvalues = rvalues,
+              cont.na = cont.na, 
               event = event,                  #GRdenom new
               denom = denom,                  #GRdenom new
               categories = NULL,
@@ -839,14 +891,14 @@ check.rules.syn <- function(setup, data) {
  else syn <- NULL
 
  syn <- sampler.syn(p, data, m, syn, visit.sequence, rules, rvalues, 
-                    event, proper, minbucket, print.flag, k, pred.not.syn)
+                    event, proper, print.flag, k, pred.not.syn, ...)
  if (m==1) syn <- syn[[1]]
 
 #-----------------------------------------------------------------------
 # restore the original NA's in the data
 # for(j in p$visit.sequence) p$data[(!r[,j]),j] <- NA
   
- names(method)        <- varnames
+ names(method)         <- varnames
  names(visit.sequence) <- varnames[visit.sequence]
 
  # save, and return, but don't return data
@@ -856,16 +908,16 @@ check.rules.syn <- function(setup, data) {
                  method = method,
                  visit.sequence = visit.sequence,
                  predictor.matrix = predictor.matrix,
-                 event = event,
                  smoothing = smoothing,
+                 event = event,
                  denom = denom,                  #GRdenom new
-                 minbucket = minbucket,
+#                 minbucket = minbucket,
                  proper = proper,
                  n = nrow(data),
                  k = k,
                  rules = rules,
                  rvalues = rvalues,
-                 cont.na = cont.na.ini,             #BN13/11
+                 cont.na = cont.na.ini,          #BN13/11
                  semicont = semicont,            #BN13/11
                  drop.not.used = drop.not.used,
                  drop.pred.only = drop.pred.only,

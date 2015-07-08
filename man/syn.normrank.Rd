@@ -16,7 +16,7 @@ syn.normrank(y, x, xp, smoothing, proper = FALSE, ...)
   \item{y}{an original data vector of length \code{n}.}
   \item{x}{a matrix (\code{n} x \code{p}) of original covariates.}
   \item{xp}{a matrix (\code{k} x \code{p}) of synthesised covariates.}
-  \item{smoothing}{smoothing methods.}
+  \item{smoothing}{smoothing method. See details.}
   \item{proper}{a logical value specifying whether proper synthesis 
     should be conducted. See details.}
   \item{\dots}{additional parameters.}
@@ -30,7 +30,10 @@ syn.normrank(y, x, xp, smoothing, proper = FALSE, ...)
   \code{y}. 
   For proper synthesis first the regression coefficients 
   are drawn from normal distribution with mean and variance
-  from the fitted model.}
+  from the fitted model.
+  A Guassian kernel smoothing can be applied by setting smoothing parameter 
+  to \code{"density"}. It is recommended as a tool to decrease the disclosure 
+  risk.}
 \value{A vector of length \code{k} with synthetic values of \code{y}.}
 \seealso{
   \code{\link{syn}}, \code{\link{syn.norm}}, \code{\link{syn.lognorm}}}

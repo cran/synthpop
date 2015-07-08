@@ -1,3 +1,46 @@
+synthpop 1.1-1
+---------------
+
+CHANGES
+* Both variable names and their column indices can be used in `visit.sequence`.
+* Arguments `rules`, `rvalues`, `cont.na`, `semicont`, `smoothing`, `event`,
+  `denom` are specified as named lists, e.g. rules = list(marital = "age < 18")
+  and do not have to be specified for all variables.
+* Optional arguments can be passed to synthesising functions by specifying 
+  `funname.argname` arguments, e.g. ctree.minbucket = 5; they are 
+  function-specific; `minbucket` removed from arguments.  
+* Smoothing is possible for numeric variables when synthesised with the method 
+  'sample'.
+* compare() is a generic function with two methods (for class `synds` and 
+  `fit.synds`); it replaced two separate functions.   
+* New argument `return.plot` for compare() method for class `fit.synds`.
+* New argument `msel` for compare() method for class `synds`, which 
+  allows comparison for pooled or selected data set(s). Results for multiple
+  synthetic data sets can be plotted on the same graph. 
+* New argument `nrow` for compare() method for class `synds`; `nrow`
+  and `ncol` determine number of plots per screen.
+* Argument `plot.na` for compare() method for class `synds` is no longer 
+  required and missing data categories for numeric variables are ploted 
+  on the same plot as non-missing values. 
+* Argument `object` of lm.synds() and glm.synds() functions changed to `data`. 
+* print() method for class `fit.synds` gives by default combined coefficient 
+  estimates only.
+* summary() method for class `fit.synds` gives combined coefficient 
+  estimates and their standard errors.
+* summary() method for class `synds` with multiple synthetic data sets 
+  provides by default summaries that are calculated by averaging summary 
+  values for all synthetic data copies.
+* Argument `obs.data` of compare.fit.synds() function changed to `data`. 
+* Method `surv.ctree` and `cart.bboot` changed to `survctree` and `cartbboot`.
+
+BUG FIXES
+* `denom` and `event` for variables with missing data.
+* `maxfaclevels` can be increased.
+* Continuous variables with missing data when zero is a non-missing value.
+* Synthesis of a single variable (with or without auxiliary predictors) now 
+  works.
+
+
 synthpop 1.1-0
 ---------------
 
@@ -31,5 +74,3 @@ CHANGES
 BUG FIXES
 * Rounding procedure (thanks to bug report by Joerg Drechsler).
 * Warning about extra disregarded argument `family` in compare.fit.synds().
-
-

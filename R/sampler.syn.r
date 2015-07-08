@@ -2,13 +2,52 @@
 
 sampler.syn <- function(p, data, m, syn, visit.sequence,
                         rules, rvalues, event, proper,
-                        minbucket, print.flag, 
-                        k, pred.not.syn, ...){
- # The sampler controls the generation of conditional distributions
- # This function is called by syn
- #
- # Authors: G Raab & B Nowok 2013-14
- # 
+                        print.flag, k, pred.not.syn, ...){
+# The sampler controls the generation of conditional distributions
+# This function is called by syn
+
+  #print(p[-c(1:3,6,7)])                                                         #--TEMP
+  
+  #--- Assign optional parameters (...) to appropriate synthesising function   
+  #rpart.args   <- c(names(formals(rpart)), names(formals(rpart.control)))
+  #ctree.args   <- c(names(formals(ctree)), names(formals(ctree_control)))
+  #polyreg.args <- c(names(formals(multinom)),names(formals(nnet.default)))
+  #polr.args    <- c(names(formals(polr)),names(formals(nnet.default)))
+  #
+  #method.args0 <- list(cart = rpart.args, cartboot = rpart.args, 
+  #                     ctree = ctree.args, survctree = ctree.args,
+  #                     polyreg = polyreg.args, polr = polr.args)
+  #dots         <- as.list(substitute(list(...)))[-1L]  
+  #dots.names   <- names(dots)
+  #
+  #method.args  <- sapply(method.args0,intersect,dots.names)
+  #method.args  <- method.args[sapply(method.args,length)>0]
+  #---
+  # browser()
+  #--- Assign optional parameters (...) to appropriate synthesising function   
+  dots  <- as.list(substitute(list(...)))[-1L]         
+  meth.with.opt <- paste(c("cart","cartbboot","ctree","survctree","polyreg","polr"), collapse="\\.|")
+  meth.check <- grep(meth.with.opt,names(dots),value=TRUE)
+  args.err   <- !(names(dots) %in% meth.check)
+  if (any(args.err)) stop("Unknown optional parameter(s): ", 
+    paste(names(dots)[args.err],collapse=", "),
+    "\nNote that they have to be method specific, e.g. 'ctree.minbucket' and NOT 'minbucket'\n", 
+    call. = FALSE)
+  if (length(dots)==0){
+    mth.args <- NULL
+  } else {  
+    mth.args.dots <- strsplit(names(dots), "\\.")
+    mth.dots  <- unique(lapply(mth.args.dots, "[[", 1))
+    args.dots <- lapply(mth.args.dots, "[[", -1)
+    mth.args  <- setNames(vector("list", length(mth.dots)),unlist(mth.dots))
+  
+    for (i in 1:length(mth.dots)) { 
+      ind <- grep(mth.dots[[i]], names(dots))
+      mth.args[[i]] <- setNames(dots[ind], args.dots[ind])
+    } 
+  } 
+  #---
+    
   if (m > 0){
 	  if (print.flag) cat("syn  variables")
     for (i in 1:m){  # begin i loop : repeated synthesising loop
@@ -25,7 +64,11 @@ sampler.syn <- function(p, data, m, syn, visit.sequence,
  #     }
 
       for(j in p$visit.sequence) {
+        #print(p$denom[j])
         theMethod <- p$method[j]
+        # get optional parameters for theMethod if they are provided
+        if (!(theMethod %in% names(mth.args))) fun.args <- NULL else            #BN--13/05/2015
+        fun.args  <- mth.args[[theMethod]]                                      #BN--13/05/2015
         vname     <- dimnames(p$data)[[2]][j]
         
         if(print.flag & theMethod!="dummy"  & j<=ncol(data)) cat(" ",vname,sep="")
@@ -54,10 +97,9 @@ sampler.syn <- function(p, data, m, syn, visit.sequence,
             x   <- length(ya)
             nam <- vname
             f   <- paste("syn", theMethod, sep = ".")
-            p$syn[ypa, j]  <- do.call(f, args = list(y,xp,proper=proper, ...)) 
-          }
-          else
-          {
+            p$syn[ypa, j]  <- do.call(f, args = list(y=y,xp=xp,
+              smoothing=p$smoothing[j],cont.na=p$cont.na[[j]],proper=proper, ...)) 
+          } else {
             x    <- p$data[ya, p$predictor.matrix[j, ] == 1, drop = FALSE]
             xp   <- p$syn [ypa, p$predictor.matrix[j, ] == 1, drop = FALSE]
             y    <- p$data[ya, j]
@@ -67,21 +109,24 @@ sampler.syn <- function(p, data, m, syn, visit.sequence,
             keep <- remove.lindep.syn(x, y, ...)
             x    <- x[, keep, drop = FALSE]
             xp   <- xp[, keep, drop = FALSE]
-         
-            if (theMethod=="surv.ctree") {
-              if (event[j]==-1) yevent <- rep(1,length(y))
-              else yevent  <- p$data[ya,event[j]]
-              survres      <- do.call(f, args = list(y,yevent,x,xp,proper=proper,minbucket=minbucket,...))
-              p$syn[ypa,j] <- survres[[1]]# synthetic data survival goes to p$syn
-              if (event[j]!=-1) p$syn[ypa,event[j]] <- survres[[2]] # synthetic data event goes to p$syn
+            #browser()
+            if (theMethod=="survctree") {
+              if (p$event[j]==-1) yevent <- rep(1,length(y))                    #BN--27/05/2015 'p$' added
+              else yevent  <- p$data[ya,p$event[j]]
+              survres      <- do.call(f, args = c(list(y=y,yevent=yevent,
+                x=x,xp=xp,proper=proper),fun.args))
+              p$syn[ypa, j] <- survres[[1]]# synthetic data survival goes to p$syn
+              if (p$event[j]!=-1) p$syn[ypa,p$event[j]] <- survres[[2]] # synthetic data event goes to p$syn
             }
-            else if (theMethod=="logreg" & j<=ncol(data) & p$denom[j]!=0) {                   #GRdenom new
-              p$syn[ypa, j] <- do.call(f, args = list(y,x,xp,denom=p$data[,p$denom[j]],denomp=p$syn[,p$denom[j]],proper=proper, ...))
+            else if (theMethod=="logreg" & p$denom[j]!=0) {     #GR denom new   #BN--27/05/2015 '& j<=ncol(data)' removed           
+              p$syn[ypa, j] <- do.call(f, args = list(y=y,x=x,xp=xp,
+                denom=p$data[ya,p$denom[j]],denomp=p$syn[ypa,p$denom[j]],       #BN--27/05/2015 'ya','ypa' added
+                proper=proper, ...))
             }   
             else {
-              p$syn[ypa, j] <- do.call(f, args = list(y,x,xp,smoothing=p$smoothing[j],proper=proper,minbucket=minbucket,...))
+              p$syn[ypa, j] <- do.call(f, args = c(list(y=y,x=x,xp=xp,
+                smoothing=p$smoothing[j],proper=proper),fun.args))
             }
-
           }
 
           if(any(p$rules[[j]]!="")){
@@ -117,11 +162,9 @@ sampler.syn <- function(p, data, m, syn, visit.sequence,
 
       } # end j loop 
     
-
-
       #if (k==dim(data)[1]) syn[[i]] <- p$syn[,1:dim(data)[2]]
       #else syn[[i]] <- p$syn[sample(1:dim(data)[1],k),1:dim(data)[2]]
-      syn[[i]] <- p$syn[,1:dim(data)[2]]
+      syn[[i]] <- p$syn[,1:dim(data)[2],drop=FALSE]
       nms<-names(data)
       # exclude unsynthesised if drop.pred.only set to true
       if (sum(pred.not.syn )>0) {

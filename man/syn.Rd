@@ -9,13 +9,10 @@
 \usage{
 syn(data, method = vector("character", length = ncol(data)), 
     visit.sequence = (1:ncol(data)), predictor.matrix = NULL,  
-    m = 1, k = nrow(data), proper = FALSE, 
-    minnumlevels = 5, maxfaclevels = 60,
-    rules = as.list(rep("", ncol(data))), rvalues = as.list(rep(NA, ncol(data))), 
-    cont.na = as.list(rep(NA, ncol(data))), semicont = as.list(rep(NA, ncol(data))),
-    event = rep(0, ncol(data)), smoothing = rep("", ncol(data)), 
-    denom = rep(0, ncol(data)), minbucket = 5,
-    drop.not.used = TRUE, drop.pred.only = FALSE,
+    m = 1, k = nrow(data), proper = FALSE, minnumlevels = 5,  
+    maxfaclevels = 60, rules = NULL, rvalues = NULL, 
+    cont.na = NULL, semicont = NULL, smoothing = NULL, 
+    event = NULL, denom = NULL, drop.not.used = TRUE, drop.pred.only = FALSE,
     default.method = c("normrank", "logreg", "polyreg", "polr"), 
     diagnostics = FALSE, print.flag = TRUE, seed = "sample", ...)
    
@@ -39,10 +36,10 @@ syn(data, method = vector("character", length = ncol(data)),
      method \code{""}. By default all variables are synthesised using
      \code{ctree} implementation of a CART model. See details for more
      information.}
-  \item{visit.sequence}{a vector of integers of arbitrary length, specifying 
-     the column indices of the synthesising/visiting sequence.
+  \item{visit.sequence}{a character vector of names of variables or an integer 
+     vector of their column indices specifying the order of synthesis.
      The default sequence \code{1:ncol(data)} implies that column variables are
-     synthesised/visited from left to right. See details for more information.}
+     synthesised from left to right. See details for more information.}
   \item{predictor.matrix}{a square matrix of size \code{ncol(data)} specifying
      the set of column predictors to be used for each target variable in the row.
      Each entry has value 0 or 1. A value of 1 means that the column
@@ -52,8 +49,8 @@ syn(data, method = vector("character", length = ncol(data)),
      For the default visit sequence (\code{1:ncol(data)}) the default
      \code{predictor.matrix} will have values of 1 in the lower triangle.
      See details for more information.}
-  \item{m}{number of synthetic copies of the original (observed) data to be generated.
-     The default is \code{m = 1}.}
+  \item{m}{number of synthetic copies of the original (observed) data to be 
+     generated. The default is \code{m = 1}.}
   \item{k}{a size of the synthetic data set (\code{k x p}),
      which can be smaller or greater than the size of the original data 
      set (\code{n x p}). The default is \code{nrow(data)} which means 
@@ -64,32 +61,38 @@ syn(data, method = vector("character", length = ncol(data)),
   \item{minnumlevels}{a minimum number of values a numeric variable should
      have to be treated as numeric. Numeric variables with fewer levels
      than \code{minnumlevels} are changed into factors.}
-  \item{maxfaclevels}{a maximum number of factor levels that can be handled by
-     parametric methods.}
-  \item{rules}{a vector or a list of rules for restricted values. Restricted
-     values are those that are determined explicitly by values of other
-     variables.}
-  \item{rvalues}{a vector or a list of the values corresponding to the rules
+  \item{maxfaclevels}{a maximum number of factor levels that can be handled.
+     It can be increased but it may cause computational problems, especially 
+     for parametric methods.}
+  \item{rules}{a named list of rules for restricted values. Restricted values 
+     are those that are determined explicitly by values of other variables.
+     The names of the list elements must correspond to the variables names for 
+     which the rules need to be specified.}
+  \item{rvalues}{a named list of the values corresponding to the rules
      specified by \code{rules}.}
-  \item{cont.na}{a vector or a list of codes for missing values for continuous
-     variables if different from the \code{R} missing data code \code{NA}.}
-  \item{semicont}{a vector or a list of values at which semi-continuous
-     variables have spikes.}     
-  \item{event}{a vector of integers of length \code{ncol(data)} specifying
-     for survival data the column indices for corresponding event indicators.
-     For non-survival data it has a value of 0. Order of variables is exactly
-     the same as in \code{data}.}
-  \item{smoothing}{a vector of length \code{ncol(data)} specifying smoothing 
-     method (\code{"density"} or \code{""}) to be used for each variable in 
-     the data. Smoothing can only be applied to continuous variables 
-     synthesised using \code{ctree}, \code{cart} or \code{normrank} method. 
-     The empty method \code{""} should be set for all other variables.}
-  \item{denom}{a vector of integers of length \code{ncol(data)} specifying
-     for variables to be modelled using binomial regression the column indices 
-     for corresponding denominator variables. For other variables it has 
-     a value of 0.}
-  \item{minbucket}{the minimum number of observations in any terminal node of 
-     a CART model.}     
+  \item{cont.na}{a named list of codes for missing values for continuous
+     variables if different from the \code{R} missing data code \code{NA}.
+     The names of the list elements must correspond to the variables names for 
+     which the missing data codes need to be specified.}
+  \item{semicont}{a named list of values at which semi-continuous
+     variables have spikes. The names of the list elements must correspond 
+     to the names of the semi-continuous variables.}     
+  \item{smoothing}{a named list specifying smoothing method (\code{"density"} 
+     or \code{""}) to be used for selected variables. Smoothing can only be 
+     applied to continuous variables synthesised using \code{sample}, 
+     \code{ctree}, \code{cart} or \code{normrank} method. The names of the 
+     list elements must correspond to the names of the variables whose values 
+     are to be smoothed. Smoothing is applied to the synthesised values.
+     For \code{"density"} smoothing a Gaussian kernel density estimator is 
+     applied with bandwidth selected using the Sheather-Jones 
+     'solve-the-equation' method (see \code{\link{bw.SJ}}).}  
+  \item{event}{a named list specifying for survival data the names of 
+     corresponding event indicators. The names of the list elements 
+     must correspond to the names of the survival variables.}
+  \item{denom}{a named list specifying for variables to be modelled using 
+     binomial regression the names of corresponding denominator variables. 
+     The names of the list elements must correspond to the names of the 
+     variables to to be modelled using binomial regression.}
   \item{drop.not.used}{a logical value. If \code{TRUE} (default) variables not 
      used in synthesis are not saved in the synthesised data and are not 
      included in the corresponding synthesis parameters.}
@@ -112,7 +115,8 @@ syn(data, method = vector("character", length = ncol(data)),
      If no integer is provided, the default \code{"sample"} will generate one
      and it will be stored. To prevent generating an integer set \code{seed}
      to \code{NA}.}
-  \item{\dots}{additional arguments passed to synthesising functions.}
+  \item{\dots}{additional arguments to be passed to synthesising functions. See 
+     section 'Details' below for more information.}
   \item{x}{an object of class \code{synds}; a result of a call to \code{syn}.}
 }
 
@@ -143,7 +147,7 @@ syn(data, method = vector("character", length = ncol(data)),
  The built-in elementary synthesising methods include:
  \describe{
    \item{ctree, cart}{classification and regression trees (CART)}
-   \item{surv.ctree}{classification and regression trees (CART)
+   \item{survctree}{classification and regression trees (CART)
       for duration time data (parametric methods for survival data are 
       not implemented yet)}
    \item{norm}{normal linear regression}
@@ -164,7 +168,18 @@ syn(data, method = vector("character", length = ncol(data)),
  \code{syn.ctree}. A new synthesising method can be introduced by writing 
  a function named \code{syn.newmethod} and then specifying \code{method} 
  parameter of \code{syn} function as \code{"newmethod"}.
- }
+ 
+ Additional parameters can be passed to synthesising methods as part of the 
+ \code{dots} argument. They have to be named using period-separated method and 
+ parameter name (\code{method.parameter}). For instance, in order to set 
+ a \code{minbucket} (minimum number of observations in any terminal node of 
+ a CART model) for a \code{ctree} synthesising method, \code{ctree.minbucket}
+ has to be specified. The parameters are method-specific and will be used for 
+ all variables to be synthesised using that method. See help for 
+ \code{syn.method} for further details about the allowed parameters for 
+ a specific method.  
+}
+
 \value{
   An object of class \code{synds}, which stands for 'synthesised 
   data set'. It is a list with the following components:
@@ -179,17 +194,15 @@ syn(data, method = vector("character", length = ncol(data)),
      The indices refer to the columns in the saved synthesised data.}
   \item{predictor.matrix}{a matrix specifying the set of predictors used
      for each variable in the saved synthesised data.}
+  \item{smoothing}{a vector specifying smoothing methods 
+     applied to each variable in the saved synthesised data.}
   \item{event}{a vector of integers specifying for survival data the column 
      indices for corresponding event indicators. The indices refer to the 
      columns in the saved synthesised data.}
-  \item{smoothing}{a vector specifying smoothing methods 
-     applied to each variable in the saved synthesised data.}
   \item{denom}{a vector of integers specifying for variables modelled 
      using binomial regression the column indices for corresponding 
      denominator variables. The indices refer to the columns in the 
      saved synthesised data.}
-  \item{minbucket}{a minimum number of observations in any terminal 
-     node of a CART model.}
   \item{proper}{a logical value indicating whether proper synthesis was
      conducted.}
   \item{n}{a number of cases in the original data.}  
@@ -225,12 +238,13 @@ s1 <- syn(ods)
 s1
   
 ### synthesis with default parametric methods
-s2 <- syn(ods, method = "parametric")
+s2 <- syn(ods, method = "parametric", seed = 1)
 s2$method
   
 ### multiple synthesis of selected variables with customised methods
-s3 <- syn(ods, visit.sequence = c(2, 1, 6, 5), m = 2,
-          method = c("logreg","sample","","normrank", "ctree",""))
+s3 <- syn(ods, visit.sequence = c(2, 1, 4, 5), m = 2,
+          method = c("logreg","sample","","normrank", "ctree",""),
+          ctree.minbucket = 10)
 summary(s3)
 summary(s3, msel = 1:2)
   
@@ -243,14 +257,11 @@ s4 <- syn(data = ods, visit.sequence = c(1, 2, 5, 3),
           predictor.matrix = pM.cor)
   
 ### handling missing values in continuous variables
-cont.na.income <- as.list(rep(NA, ncol(ods)))
-cont.na.income[[4]] <- c(NA,-8)
-s5 <- syn(ods, cont.na = cont.na.income)
+s5 <- syn(ods, cont.na = list(income = c(NA, -8)))
   
 ### rules for restricted values - marital status of males under 18 should be 'single'
-rules.marital <- list("","","age < 18 & sex == 'MALE'","","","")
-rvalues.marital <- list(NA,NA,'SINGLE',NA,NA,NA)
-s6 <- syn(ods, rules = rules.marital, rvalues = rvalues.marital, method = "parametric")
+s6 <- syn(ods, rules = list(marital = "age < 18 & sex == 'MALE'"),
+          rvalues = list(marital = 'SINGLE'), method = "parametric", seed = 1)
 with(s6$syn, table(marital[age < 18 & sex == 'MALE']))
 ### results for default parametric synthesis without the rule  
 with(s2$syn, table(marital[age < 18 & sex == 'MALE']))

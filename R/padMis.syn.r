@@ -1,5 +1,6 @@
 padMis.syn <- function(data, method, predictor.matrix, visit.sequence,
-                       nvar, rules, rvalues, default.method, cont.na, smoothing, denom) {
+                       nvar, rules, rvalues, default.method, cont.na, 
+                       smoothing, event, denom) {
 
  # Function called by syn to make dummy/factor variable for missing values
  # in continuous variables. Data is augmented by columns for dummy/factor 
@@ -51,18 +52,26 @@ padMis.syn <- function(data, method, predictor.matrix, visit.sequence,
     # add methods for new variables
       method[ncol(data)-1] <- method[j]
       if (method[j] %in% c("ctree","ctree.proper","cart","cart.proper")) {
-        method[ncol(data)] <- method[j]  
+        method[ncol(data)] <- method[j] 
+      } else if (method[j]=="sample") {   
+        method[ncol(data)] <- "sample"                                          
       } else {
         method[ncol(data)] <- ifelse(nlevels(data[,ncol(data)])==2,
                                      default.method[2],default.method[3])
       }   
     
-    # pass smoothing to new variables
+    # pass smoothing to new variable and remove from original one
       smoothing[ncol(data)-1] <- smoothing[j]
       smoothing[ncol(data)]   <- ""
+      smoothing[j]            <- ""                                             #BN20V
     
-    # add denom for new variables
-      denom[(ncol(data)-1):ncol(data)] <- 0
+    # pass denom and event for new variable and remove from original one
+      denom[ncol(data)-1] <- denom[j]    #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! check if correct
+      denom[ncol(data)]   <- 0 
+      denom[j]            <- 0
+      event[ncol(data)-1] <- event[j]    
+      event[ncol(data)]   <- 0 
+      event[j]            <- 0
     
     # insert the column numbers for the new variables into the visit sequence 
     # before the jth column
@@ -71,8 +80,8 @@ padMis.syn <- function(data, method, predictor.matrix, visit.sequence,
         idx <- (1:length(visit.sequence))[visit.sequence==j]-1
         visit.sequence <- append(visit.sequence,newcols,idx)
       # modify method for the original variable
-        method[j] <- paste0("~(ifelse(",name.0,"==0 | is.na(",name.0,
-            "),as.numeric(levels(",name.NA,"))[",name.NA,"],",name.0,"))")
+        method[j] <- paste0("~(ifelse(",name.NA,"!=", nonmiscode," | is.na(",name.0,
+            "),as.numeric(levels(",name.NA,"))[",name.NA,"],",name.0,"))")    
       }
 
     # update missing rules and values for the new variables
@@ -102,5 +111,6 @@ padMis.syn <- function(data, method, predictor.matrix, visit.sequence,
               rvalues = rvalues,
               factorNA = factorNA,
               smoothing = smoothing,
+              event = event,
               denom = denom))
 }

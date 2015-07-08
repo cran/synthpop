@@ -3,28 +3,40 @@
 \alias{print.summary.synds}
 \title{Synthetic data object summaries}
 \description{
-Produce summaries of the synthesised variables for selected copies of synthetic data.
+Produces summaries of the synthesised variables. When more than one 
+synthetic data set has been generated (object$m>1), by default summaries 
+are calculated by averaging summary values for all synthetic data copies
+(see \code{msel} argument).  
 }
 \usage{
-\method{summary}{synds}(object, msel = 1, \dots)
+\method{summary}{synds}(object, msel = NULL, maxsum = 7, 
+digits = max(3, getOption("digits")-3), \dots)
 
 \method{print}{summary.synds}(x, \dots)
 }
 \arguments{
-  \item{object}{an object of class \code{synds}; a result of a call to \code{\link{syn}}.}
-  \item{msel}{index or indices of synthetic data copies for which a summary is desired.}
+  \item{object}{an object of class \code{synds}; a result of a call to 
+    \code{\link{syn}}.}
+  \item{msel}{index or indices of synthetic data copies for which a summary 
+    is desired. If \code{NULL} (default) summaries are calculated by averaging 
+    summary values for all synthetic data copies.}
+  \item{maxsum}{integer, indicating how many levels should be shown for factors.}
+  \item{digits}{integer, used for number formatting with \code{\link{format}}.}    
   \item{\dots}{additional arguments passed to \code{\link{summary}}.}
   \item{x}{an object of class \code{summary.synds}.}
 }
 \details{See \code{\link[base]{summary}} for more details.}
 \value{
-  An object of class \code{summary.synds}, which is a list with the following components:
+  An object of class \code{summary.synds}, which is a list with the following 
+  components:
   \item{m}{the number of synthetic versions of the original (observed) data.}
-  \item{msel}{index or indices of synthetic data copies for which a summary is produced.}
+  \item{msel}{index or indices of synthetic data copies for which a summary 
+    is produced. If \code{NULL} summaries are calculated by averaging 
+    summary values for all synthetic data copies.}
   \item{method}{a vector of synthesising methods applied to each variable
     in the saved synthesised data.}
-  \item{result}{a table or a list of tabels (if more than one synthetic data set is selected)  
-    with summaries of synthesised variables.}
+  \item{result}{a table or a list of tabels (if more than one synthetic data 
+    set is selected) with summaries of synthesised variables.}
 }
 \seealso{
 \code{\link{summary}},\code{\link{print}}

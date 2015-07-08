@@ -8,10 +8,10 @@
   using \code{\link[stats]{glm}} and \code{\link[stats]{lm}} function respectively.
 }
 \usage{
-glm.synds(formula, family = "binomial", object,  ...)
-lm.synds(formula, object, ...)
+glm.synds(formula, family = "binomial", data,  ...)
+lm.synds(formula, data, ...)
 
-\method{print}{fit.synds}(x, msel = 1, \dots)
+\method{print}{fit.synds}(x, msel = NULL, \dots)
 }
 \arguments{
   \item{formula}{a symbolic description of the model 
@@ -23,20 +23,23 @@ lm.synds(formula, object, ...)
     and link function to be used in the model. See
     the documentation of \code{\link[stats]{glm}} and
     \code{\link[stats]{family}} for details.}
-  \item{object}{an object of class \code{synds}, which stands
+  \item{data}{an object of class \code{synds}, which stands
     for 'synthesised data set'. It is typically created by
-    function \code{\link{syn}} and it includes \code{object$m} 
+    function \code{\link{syn}} and it includes \code{data$m} 
     synthesised data set(s).}
   \item{\dots}{additional parameters passed to \code{\link[stats]{glm}} 
-    or \code{\link[stats]{lm}} .}
+    or \code{\link[stats]{lm}}.}
   \item{x}{an object of class \code{fit.synds}.}    
-  \item{msel}{index or indices of synthetic data copies for which results 
-    are to be displayed.}  
+  \item{msel}{index or indices of synthetic data copies for which coefficient
+    estimates are to be displayed. If \code{NULL} (default) the combined 
+    (average) coefficient estimates are printed.}  
 }
 \value{
   An object of class \code{fit.synds}. It is a list with the following 
   components:
   \item{call}{the original call to \code{glm.synds} or \code{lm.synds}.}
+  \item{mcoefavg}{combined (average) coefficient estimates.}
+  \item{mvaravg}{combined (average) variance estimates of \code{mcoef}.}
   \item{proper}{a logical value indicating whether synthetic data were 
     generated using proper synthesis.}
   \item{m}{the number of synthetic versions of the observed data.}
@@ -45,6 +48,8 @@ lm.synds(formula, object, ...)
   \item{fitting.function}{function used to fit the model.}
   \item{n}{a number of cases in the original data.}  
   \item{k}{a number of cases in the synthesised data.}
+  \item{mcoef}{a matrix of coefficients estimates from all \code{m} syntheses.}
+  \item{mvar}{a matrix of variance estimates from all \code{m} syntheses.}
 }
 \seealso{
   \code{\link[stats]{glm}},\code{\link[stats]{lm}}
@@ -53,7 +58,7 @@ lm.synds(formula, object, ...)
 ### Logit model 
 ods <- SD2011[1:1000,c("sex","age","edu","marital","ls","smoke")]
 s1 <- syn(ods, m = 3)
-f1 <- glm.synds(smoke ~ sex + age + edu + marital + ls, object = s1, family = "binomial")
+f1 <- glm.synds(smoke ~ sex + age + edu + marital + ls, data = s1, family = "binomial")
 f1
 print(f1, msel = 1:2)
   
@@ -61,7 +66,7 @@ print(f1, msel = 1:2)
 ods <- SD2011[1:1000,c("sex","age","income","marital","depress")]
 ods$income[ods$income == -8] <- NA
 s2 <- syn(ods, m = 3)
-f2 <- lm.synds(depress ~ sex + age + log(income) + marital, object = s2)
+f2 <- lm.synds(depress ~ sex + age + log(income) + marital, data = s2)
 f2
 print(f2,1:3)
 }
