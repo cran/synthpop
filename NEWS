@@ -1,3 +1,18 @@
+synthpop 1.2-0
+---------------
+
+NEW FEATURES
+* A new function utility.synds() for distributional comparison of synthesised 
+  data with the original (observed) data using propensity scores. 
+* New measures for comparing model estimates based on synthesised and observed 
+  data implemented in compare.fit.synds() function: standardized differences 
+  in coeffcient values(`coef.diff`) and confidence interval overlap (`ci.overlap`)
+
+CHANGES
+* No dependency on `coefplot` package.  
+* Default for `drop.not.used` changed to FALSE.
+
+
 synthpop 1.1-1
 ---------------
 

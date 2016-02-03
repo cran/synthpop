@@ -2,7 +2,7 @@
 \alias{syn.cart}
 %\alias{syn.cartbboot}
 \alias{syn.ctree}
-\title{Synthesis by classification and regression trees (CART)}
+\title{Synthesis with classification and regression trees (CART)}
 \description{
   Generates univariate synthetic data using classification and
   regression trees (without or with bootstrap).

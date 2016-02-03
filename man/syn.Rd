@@ -12,7 +12,7 @@ syn(data, method = vector("character", length = ncol(data)),
     m = 1, k = nrow(data), proper = FALSE, minnumlevels = 5,  
     maxfaclevels = 60, rules = NULL, rvalues = NULL, 
     cont.na = NULL, semicont = NULL, smoothing = NULL, 
-    event = NULL, denom = NULL, drop.not.used = TRUE, drop.pred.only = FALSE,
+    event = NULL, denom = NULL, drop.not.used = FALSE, drop.pred.only = FALSE,
     default.method = c("normrank", "logreg", "polyreg", "polr"), 
     diagnostics = FALSE, print.flag = TRUE, seed = "sample", ...)
    
@@ -224,6 +224,7 @@ syn(data, method = vector("character", length = ncol(data)),
      \code{read.obs()}.}   
   \item{val.lab}{a list value labels for factors for data imported from SPSS 
      using \code{read.obs()}.}       
+  \item{obs.vars}{a vector of all variable names in the observed data set.}
 }
 \note{See package vignette for additional information.}
 \seealso{\code{\link{compare.synds}}, \code{\link{summary.synds}}}

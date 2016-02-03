@@ -74,7 +74,7 @@ sdc <- function(object,data,label=NULL,rm.replicated.uniques=FALSE,
    if (rm.replicated.uniques) {
      du <- replicated.uniques(object,data) 
      object$syn <- object$syn[!du$replications,]
-     if (du$no.replications>0) cat("\nNumber of unique units in the synthesised data that replicates unique real individuals:",
+     if (du$no.replications>0) cat("\nNumber of unique units in the synthesised data that replicates unique real individuals:\n",
        du$no.replications,"\nThey have been removed from the synthetic data set.\n\n")
    }
    if (!is.null(label)) object$syn <- cbind.data.frame(flag=label, object$syn)
@@ -102,7 +102,7 @@ sdc <- function(object,data,label=NULL,rm.replicated.uniques=FALSE,
      for (i in 1:object$m){ 
        object$syn[[i]] <- object$syn[[i]][!du$replications[,i],]
      }
-   if (any(du$no.replications>0)) cat("\nNo. of unique units in the synthesised data that replicates unique real individuals:",
+   if (any(du$no.replications>0)) cat("\nNo. of unique units in the synthesised data that replicates unique real individuals:\n",
      du$no.replications,"\nThey have been removed from the synthetic data set(s).\n\n")
    }
    if (!is.null(label)) object$syn <- mapply(cbind.data.frame, flag=label,

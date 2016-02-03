@@ -5,7 +5,8 @@
 \description{Combines the results of models fitted to each of the \code{m} 
   synthetic data sets.}
 \usage{
-\method{summary}{fit.synds}(object, population.inference = FALSE, msel = NULL, \dots)
+\method{summary}{fit.synds}(object, population.inference = FALSE, msel = NULL,
+partly = FALSE, \dots)
 
 \method{print}{summary.fit.synds}(x, \dots)
 }
@@ -20,6 +21,7 @@
   \item{msel}{index or indices of synthetic data copies for which summaries 
     of fitted models are to be produced. If \code{NULL} (default) a summary 
     of combined estimates is produced.}
+  \item{partly}{a logical value indicating whether data are partly synthesised.}
   \item{\dots}{additional parameters.}
   \item{x}{an object of class \code{summary.fit.synds}.}
 }

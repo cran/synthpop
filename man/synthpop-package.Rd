@@ -9,8 +9,8 @@ Generate synthetic versions of a data set using parametric or CART methods.}
 \tabular{ll}{
 Package: \tab synthpop\cr
 Type: \tab Package\cr
-Version: \tab 1.1-1\cr
-Date: \tab 2015-07-07\cr
+Version: \tab 1.2-0\cr
+Date: \tab 2016-02-03\cr
 License: \tab GPL-2 | GPL-3\cr
 }
 Synthetic data are generated from the original (observed) data by the function 

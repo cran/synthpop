@@ -9,13 +9,14 @@
  observed data set. The coefficients with confidence intervals for the 
  observed data is plotted together with their estimates from synthetic data. 
  When more than one synthetic data set has been generated (\code{object$m>1}) 
- combining rules are applied. 
+ combining rules are applied. Analysis-specific utility measures are used to
+ evaluate differences between synthetic and observed data.
 }
 \usage{
 \method{compare}{fit.synds}(object, data, plot = "Z", 
   return.result = TRUE, return.plot = TRUE, plot.intercept = FALSE, 
   lwd = 1, lty = 1, lcol = c("#1A3C5A","#4187BF"), 
-  dodge.height = .5, point.size = 2.5, ...)
+  dodge.height = .5, point.size = 2.5, partly = FALSE, ...)
 
 \method{print}{compare.fit.synds}(x, \dots)
 }
@@ -38,7 +39,8 @@
   \item{dodge.height}{size of vertical shifts for confidence intervals to 
   prevent overlaping.} 
   \item{point.size}{size of plotting symbols used to plot point estimates of 
-   coefficients.} 
+   coefficients.}
+  \item{partly}{a logical value indicating whether data are partly synthesised.}    
   \item{\dots}{additional parameters passed to \code{\link{ggplot}}.}
   
   \item{x}{an object of class \code{compare.fit.synds}.}
@@ -54,8 +56,7 @@ not differ from the estimates from the observed data (\code{Beta} and
 \value{
  An object of class \code{compare.fit.synds} which is a list with the 
  following components:
-  \item{fit.synds.call}{the original call to fit the model to the 
-   synthesised data set.}
+  \item{call}{the original call to fit the model to the synthesised data set.}
   \item{coef.obs}{a data frame including estimates based on the observed
    data: coefficients (\code{Beta}), their standard errors (\code{se(Beta)})
    and Z scores (\code{Z}).}
@@ -67,15 +68,29 @@ not differ from the estimates from the observed data (\code{Beta} and
    Note that \code{se(B.syn)} and \code{se(Z.syn)} give the standard errors 
    of the mean of the \code{m} syntheses and can be made very small by 
    increasing \code{m}.}
+ \item{coef.diff}{a data frame containing standardized differences in 
+   coeffcient estimates and corresponding p values.}  
+ \item{ci.overlap}{a data frame containing the percentage of overlap between 
+   the estimated synthetic confidence intervals and the original sample 
+   confidence intervals for each parameter, calculated as suggested by 
+   Karr et al. (2006).} 
   \item{ci.plot}{\code{ggplot} of the the coefficients with confidence 
    intervals for models based on observed and synthetic data.}
- If \code{return.result} was set to \code{FALSE}, \code{coef.obs} and 
- \code{coef.obs} are both \code{NULL}. If \code{return.plot} was set 
- to \code{FALSE}, \code{ci.plot} is \code{NULL}.
+ If \code{return.result} was set to \code{FALSE} then \code{coef.obs},
+ \code{coef.obs}, \code{coef.diff} and \code{ci.overlap} are all \code{NULL}. 
+ If \code{return.plot} was set to \code{FALSE}, \code{ci.plot} is \code{NULL}.
 } 
+
+\references{
+  Karr, A., Kohnen, C.N., Organian, A., Reiter, J.P. and Sanil, A.P. (2006). 
+  A framework for evaluating the utility of data altered to protect 
+  confidentiality. \emph{The American Statistician}, \bold{60}(3), 224-232.
+}
+
 \seealso{
   \code{\link{summary.fit.synds}}
 }
+
 \examples{
 ods <- SD2011[,c("sex","age","edu","smoke")]
 s1 <- syn(ods, m = 5)

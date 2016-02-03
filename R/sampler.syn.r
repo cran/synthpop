@@ -26,7 +26,7 @@ sampler.syn <- function(p, data, m, syn, visit.sequence,
   # browser()
   #--- Assign optional parameters (...) to appropriate synthesising function   
   dots  <- as.list(substitute(list(...)))[-1L]         
-  meth.with.opt <- paste(c("cart","cartbboot","ctree","survctree","polyreg","polr"), collapse="\\.|")
+  meth.with.opt <- paste(c("cart","cartbboot","ctree","survctree","polyreg","polr","rf","bag"), collapse="\\.|")
   meth.check <- grep(meth.with.opt,names(dots),value=TRUE)
   args.err   <- !(names(dots) %in% meth.check)
   if (any(args.err)) stop("Unknown optional parameter(s): ", 
@@ -144,7 +144,7 @@ sampler.syn <- function(p, data, m, syn, visit.sequence,
 
         else if (is.passive(theMethod)) {
           class0 <- class(p$syn[,j])
-          p$syn[,j] <- model.frame(as.formula(theMethod), p$syn, na.action=na.pass)	#RJ - FIXED passive synthesising: as.formula()
+          p$syn[,j] <- suppressWarnings(model.frame(as.formula(theMethod), p$syn, na.action=na.pass))	#BN 25/08 added suppressWarnings to avoid NAs by coersion for NAtemp
           class(p$syn[,j]) <- class0
         }
 
@@ -192,7 +192,8 @@ sampler.syn <- function(p, data, m, syn, visit.sequence,
       #turn NA level in factors to missing NA's
       for (j in (1:ncol(syn[[i]]))){
         if(is.factor(syn[[i]][,j])) {
-          syn[[i]][,j] <- factor(syn[[i]][,j],exclude=NA,levels=levels(syn[[i]][,j]))
+        #  syn[[i]][,j] <- factor(syn[[i]][,j],exclude=NA,levels=levels(syn[[i]][,j]))
+          levels(syn[[i]][,j])[levels(syn[[i]][,j])=="NAtemp"] <- NA     #!BN 10/08/15 
         }
       }
 

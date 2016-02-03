@@ -126,7 +126,7 @@ compare.synds <- function(object, data, vars = NULL,
  
  # list of result tables
  if (length(msel) <= 1) {
-   os.table.fac <- mapply(rbind, obs = per.obs.fac$perlist, 
+   os.table.fac <- mapply(rbind, obs = per.obs.fac$perlist, #!!! corrections needed when no observations for factor levels (<NA>s in real but not in synthetic (?))
      syn = per.syn.facall$perlist, SIMPLIFY = FALSE)
    os.table.num <- mapply(rbind, obs = per.obs.num$perlist, 
      syn = per.syn.numall$perlist, SIMPLIFY = FALSE)
@@ -137,7 +137,7 @@ compare.synds <- function(object, data, vars = NULL,
    for (i in 1:length(msel)) {
      if (sum(fac)>0) temp.fac <- per.syn.fac[[i]]$perlist else temp.fac <- NULL
      if (sum(num)>0) temp.num <- per.syn.num[[i]]$perlist else temp.num <- NULL
-     os.table.fac <- mapply(rbind, os.table.fac, temp.fac, SIMPLIFY = FALSE)
+     os.table.fac <- mapply(rbind, os.table.fac, temp.fac, SIMPLIFY = FALSE)    #!!! corrections needed when no observations for factor levels
      os.table.num <- mapply(rbind, os.table.num, temp.num, SIMPLIFY = FALSE)     
    }
   }
@@ -272,24 +272,24 @@ dfNA <- function(data, na){
 
 
 ###-----compare.fit.synds--------------------------------------------------
-compare.fit.synds <- function(object, data, plot = "Z", 
-  return.result = TRUE, return.plot = TRUE, plot.intercept = FALSE, 
-  lwd = 1, lty = 1, lcol = c("#1A3C5A","#4187BF"), 
-  dodge.height = .5, point.size = 2.5, ...) {   # c("#132B43", "#56B1F7")
-           
+compare.fit.synds <- function(object, data, plot = "Z",
+  return.result = TRUE, return.plot = TRUE, plot.intercept = FALSE,
+  lwd = 1, lty = 1, lcol = c("#1A3C5A","#4187BF"),
+  dodge.height = .5, point.size = 2.5, partly = FALSE, ...) {   # c("#132B43", "#56B1F7")
+
  # compares and plots fits to synthetic and real data
- # first parameter must be a fit to synthetic data from glm.synds() 
+ # first parameter must be a fit to synthetic data from glm.synds()
  # or lm.synds()
  value <- "Value"
  coefficient <- c("Coefficient", "Model")
- 
+
  call <- match.call()
  # if (!class(object)=="fit.synds") stop("Object must have class fit.synds\n")
  if (!is.data.frame(data)) stop("Data must be a data frame\n")  # theoretically can be a matrix (?)
 
- syn.fit          <- summary.fit.synds(object) 
+ syn.fit          <- summary.fit.synds(object, partly = partly)
  fitting.function <- object$fitting.function
- 
+
  # get fit to real data
  if (fitting.function=="lm") {
  real.fit <- summary(do.call(object$fitting.function,
@@ -298,62 +298,63 @@ compare.fit.synds <- function(object, data, plot = "Z",
  real.fit <- summary(do.call(object$fitting.function,
                      args=list(formula=object$call$formula,
                      family=object$call$family,data=call$data)))
- }                     
+ }
 
  if (return.plot == TRUE){
    yvar <- as.character(object$call$formula[2])
-  
+
    # prepare data for plotting confidence intervals (one data frame)
    if (plot=="Z"){
      BetaCI <- dfCI(real.fit, Z = TRUE)
-     BsynCI <- dfCI(syn.fit, Z = TRUE, name.Z = "Z.syn", 
+     BsynCI <- dfCI(syn.fit, Z = TRUE, name.Z = "Z.syn",
                  model.name = "synthetic")
-     xlab = "Z value"            
+     xlab = "Z value"
      title = paste0("Z values for fit to ",yvar)
    } else {
      BetaCI <- dfCI(real.fit)
      BsynCI <- dfCI(syn.fit, names.est.se = c("B.syn","se(Beta).syn"),
                  model.name = "synthetic")
-     xlab = "Value"            
+     xlab = "Value"
      title = paste0("Coefficients for fit to ",yvar)
    }
-   
+
    modelCI <- rbind.data.frame(BetaCI, BsynCI)
    rownames(modelCI) <- 1:nrow(modelCI)
-  
+
    if(!plot.intercept) modelCI <- modelCI[modelCI$Coefficient!="(Intercept)",]
-  
-   CI.geom <- geom_errorbarh(aes_string(xmin = "LowCI", xmax = "HighCI",
-     color = "Model", linetype = "Model"),lwd = lwd, lty = lty, height = 0,
-     position = coefplot:::position_dodgev(height = dodge.height))   #! :::  
-  
-   point.geom <- geom_point(aes_string(xmin = value, xmax = value, 
-     color = "Model", shape = "Model"), size = point.size, 
-     position = coefplot:::position_dodgev(height = dodge.height))   #! :::   
-  
-   col.geom <- scale_colour_manual(values = lcol, breaks = c("synthetic","observed"))
-   # col.geom <- scale_colour_manual(values = rev(brewer.pal(3,"Blues")))
-   # col.geom <- scale_colour_grey(start = 0, end = .6)
-  
-   p <- ggplot(data=modelCI, aes_string(x = value, y = coefficient))  
-   p <- p + geom_vline(xintercept=0, colour="grey", linetype=2, lwd=1)
-   p <- p + CI.geom + point.geom + labs(title = title, x = xlab)
-   p <- p + col.geom
-   p <- p + scale_shape_manual(values=c(16:17),breaks = c("synthetic","observed"))
+
+   CI.geom <- geom_errorbar(aes_string(ymin = "LowCI", ymax = "HighCI",
+     color = "Model", linetype = "Model"), data = modelCI, width = 0, 
+     lwd = lwd, lty = lty, position = position_dodge(width = dodge.height))
+
+   point.geom <- geom_point(aes_string(ymin = value, ymax = value,
+     color = "Model", shape = "Model"), data = modelCI, 
+     size = point.size, position = position_dodge(width = dodge.height))
+
+   p <- ggplot(data=modelCI, aes_string(x = coefficient, y = value))
+   p <- p + geom_hline(yintercept = 0, colour = "grey", linetype = 2, lwd = 1)
+   p <- p + CI.geom + point.geom + labs(title = title, y = xlab)
+   p <- p + scale_shape_manual(values=c(16:17), breaks = c("synthetic","observed")) +
+            scale_colour_manual(values = lcol, breaks = c("synthetic","observed"))
+   p <- p + coord_flip()
    #p <- p + theme_bw()
+   # scale_colour_manual(values = rev(brewer.pal(3,"Blues")))
+   # scale_colour_grey(start = 0, end = .6)
    p
  } else p <- NULL
- 
- if (return.result == TRUE){ 
+
+ if (return.result == TRUE){
    res.obs <- real.fit$coefficients[,-4]
    colnames(res.obs) <- c("Beta","se(Beta)","Z")
    res.syn <- syn.fit$coefficients[,c("B.syn","se(Beta).syn","se(B.syn)","Z.syn","se(Z.syn)")]
-   ##JS Addition, re-order synthetic results according to real results
-   res.syn = res.syn[order(match(rownames(res.syn), rownames(res.obs) ) ), ]
- } else res.obs <- res.syn <- NULL
- 
- res <- list(fit.synds.call = object$call, coef.obs = res.obs,
-   coef.syn = res.syn, ci.plot = p)
+   res.syn <- res.syn[order(match(rownames(res.syn), rownames(res.obs))), ]
+   res.overlap <- compare.CI(res.syn, res.obs, plot.intercept)
+   res.diff <- compute.diff(res.syn, res.obs, plot.intercept)
+ } else res.obs <- res.syn <- res.overlap <- res.diff <- NULL
+
+ res <- list(call = object$call, coef.obs = res.obs,
+   coef.syn = res.syn, coef.diff = res.diff, 
+   ci.overlap = res.overlap, ci.plot = p)
  class(res) <- "compare.fit.synds"
  return(res)
 }
@@ -383,3 +384,66 @@ dfCI <- function(modelsummary, names.est.se = c("Estimate","Std. Error"),
 
   return(msCI)
 }
+
+
+###-----compare.CI---------------------------------------------------------
+compare.CI <- function(synthetic, observed, intercept, ...){
+
+##Initiate
+ if(nrow(observed) > nrow(synthetic)){
+   numVar <- nrow(synthetic); rNames <- rownames(synthetic)
+ } else{
+   numVar <- nrow(observed); rNames <- rownames(observed)
+ } 
+ CIoverlap <- matrix(NA, nrow = numVar, ncol = 1, 
+   dimnames = list(rNames, "CI overlap"))
+	
+##Calculate CIoverlap
+ for(i in 1:numVar) {
+
+##Store CIs
+ syn.upper <- synthetic[i, 1] + (1.96 * synthetic[i, 2])
+ syn.lower <- synthetic[i, 1] - (1.96 * synthetic[i, 2])
+ obs.upper <- observed[i, 1] + (1.96 * observed[i, 2])
+ obs.lower <- observed[i, 1] - (1.96 * observed[i, 2])
+	  
+## CI overlap
+ overlap.lower <- max(obs.lower, syn.lower)
+ overlap.upper <- min(obs.upper, syn.upper)
+   if(overlap.lower >= overlap.upper){
+	   CIoverlap[i, 1] <- 0
+	 } else {
+	   CIoverlap[i, 1] <- 0.5 * 
+       (((overlap.upper - overlap.lower) / (obs.upper - obs.lower)) + 
+		    ((overlap.upper - overlap.lower) / (syn.upper - syn.lower)))
+	 }
+##Coef coverage
+#coverage[i, 1] = (observed[i, 1] <= syn.upper & observed[i, 1] >= syn.lower)
+##Z coverage
+#coverage[i, 2] = (observed[i, 3] <= synthetic[i, 4] + (1.96 * synthetic[i, 5]) & 
+#	 observed[i, 3] >= synthetic[i, 4] - (1.96 * synthetic[i, 5]))
+ }
+
+  if(intercept == FALSE) {
+    CIoverlap = CIoverlap[-1, , drop = FALSE]
+  }
+  
+	return(as.data.frame(CIoverlap))
+}
+
+
+###-----compute.diff-------------------------------------------------------
+compute.diff <- function(synthetic, observed, intercept, ...){
+ tempStdDiff <- cbind((synthetic[,"B.syn"] - observed[,"Beta"]) / synthetic[,"se(Beta).syn"], 
+   (synthetic[,"Z.syn"] - observed[,"Z"]) / synthetic[,"se(Z.syn)"])
+ 
+ pval <- round(2 * (1 - pnorm(abs(tempStdDiff))), 3)
+ coefdiff <- data.frame("Std. coef diff" = tempStdDiff[, 1], 
+                    "p value" = pval[, 1], check.names = F)
+ 
+ if(intercept == FALSE){
+   coefdiff = coefdiff[-1, ]
+ }
+ return(coefdiff)
+}
+

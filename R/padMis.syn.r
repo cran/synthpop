@@ -28,10 +28,11 @@ padMis.syn <- function(data, method, predictor.matrix, visit.sequence,
     # augment the data with a column for the original continuous variable with 
     # missing values replaced by zeros and a column for a new factor for 
     # missing values 
-      nonmiscode <- 10^(nchar(round(max(data[,j],na.rm=TRUE)))+1)-1                 #BN13/11
+      nonmiscode <- 10^(nchar(round(max(data[,j],na.rm=TRUE)))+1)-1               #BN13/11
       y.0  <- ifelse(data[,j] %in% c(cont.na[[j]],rvalues[[j]]),0,data[,j])
       y.NA <- ifelse(data[,j] %in% c(cont.na[[j]],rvalues[[j]]),data[,j],nonmiscode) #BN13/11 0 changed with nonmiscode
       y.NA <- addNA(y.NA,ifany=TRUE) 
+      levels(y.NA)[is.na(levels(y.NA))] <- "NAtemp"                         #BN25/08 to allow random forest
       data <- cbind(data,y.0,y.NA)           
       name.0  <- paste(attr(data,"names")[j],0,sep=".")
       name.NA <- paste(attr(data,"names")[j],NA,sep=".")
@@ -51,15 +52,17 @@ padMis.syn <- function(data, method, predictor.matrix, visit.sequence,
 
     # add methods for new variables
       method[ncol(data)-1] <- method[j]
-      if (method[j] %in% c("ctree","ctree.proper","cart","cart.proper")) {
+      if (method[j] %in% c("ctree","ctree.proper","cart","cart.proper","rf","bag")) {
         method[ncol(data)] <- method[j] 
+      #} else if (method[j] %in% c("rf","bag")) {   
+      #  method[ncol(data)] <- "cart" 
       } else if (method[j]=="sample") {   
         method[ncol(data)] <- "sample"                                          
       } else {
         method[ncol(data)] <- ifelse(nlevels(data[,ncol(data)])==2,
                                      default.method[2],default.method[3])
       }   
-    
+     
     # pass smoothing to new variable and remove from original one
       smoothing[ncol(data)-1] <- smoothing[j]
       smoothing[ncol(data)]   <- ""

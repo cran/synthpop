@@ -13,7 +13,7 @@ syn <- function(data,
                 rules = NULL, rvalues = NULL,                                  
                 cont.na = NULL, semicont = NULL,
                 smoothing = NULL, event = NULL, denom = NULL,
-                drop.not.used = TRUE, drop.pred.only = FALSE,                                            
+                drop.not.used = FALSE, drop.pred.only = FALSE,                                            
                 default.method = c("normrank","logreg","polyreg","polr"),
                 diagnostics = FALSE,
                 print.flag = TRUE,
@@ -26,6 +26,8 @@ syn <- function(data,
 # the code for the following checking functions is included within syn
 # so as to allow them to access the local objects
 #----------------------------------------------------------------------
+obs.vars <- names(data)
+
 # set default method for everything to ctree and to blank (which will get defaults) if method is "parametric"
 if (all(method=="")) method="ctree"
 # else if (length(method)==1 && method=="parametric") method=rep("",dim(data)[2])
@@ -738,6 +740,7 @@ check.rules.syn <- function(setup, data) {
  isfactor  <- sapply(data,is.factor)
  for (j in (1:nvar)[isfactor & inpred & notevent]){
    data[,j] <- addNA(data[,j],ifany=TRUE)
+   levels(data[,j])[is.na(levels(data[,j]))] <- "NAtemp"          #!BN 10/08/15 
  } 
 
  # Identify any factors with > maxfaclevels levels that are in visit.sequence
@@ -923,7 +926,8 @@ check.rules.syn <- function(setup, data) {
                  drop.pred.only = drop.pred.only,
                  seed = seed,
                  var.lab = var.lab,
-                 val.lab = val.lab)
+                 val.lab = val.lab,
+                 obs.vars = obs.vars)
  if (diagnostics) syndsobj <- c(syndsobj, list(pad = p))
  class(syndsobj) <- "synds"
  return(syndsobj)

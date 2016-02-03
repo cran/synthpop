@@ -192,25 +192,39 @@ print.fit.synds <- function(x, msel = NULL, ...)
 
 ###-----summary.fit.synds--------------------------------------------------
 
-summary.fit.synds <- function(object, population.inference = FALSE, msel = NULL, ...)
+summary.fit.synds <- function(object, population.inference = FALSE, msel = NULL, partly = FALSE, ...)
 { # df.residual changed to df[2] because didn't work for lm - check if that's ok
   if (!class(object) == "fit.synds") stop("Object must have class fit.synds\n")
   m <- object$m
   k <- object$k
   n <- object$n
   
-  coefficients <- object$mcoefavg
-  vars <- object$mvaravg
+  coefficients <- object$mcoefavg     # mean of coefficients (over m syntheses)
+  vars <- object$mvaravg              # mean of variances (over m syntheses)
 
   if (population.inference == F){ ## inf to Q hat
 
-    if (object$proper == F){
+    if(partly == TRUE){
+      bm = c(0)
+      for(i in 1:m){
+        bm = bm + ((object$mcoef[i,] - object$mcoefavg)^2 / (m - 1))
+      }
+      result <- cbind(coefficients,
+                      sqrt(bm/m),
+                      sqrt(vars*k/n),
+                      coefficients/sqrt(vars*k/n),
+                      #sqrt((1 + coefficients^2/vars/2/object$analyses[[1]]$df[2])*n/k/m)
+                      sqrt(1 + coefficients^2/vars/4/object$analyses[[1]]$df[2] * n/k/m))  #!?????
+      dimnames(result)[[2]] <- c("B.syn","se(B.syn)","se(Beta).syn","Z.syn","se(Z.syn)")
+    }
+    else if (object$proper == F){
       ## simple synthesis
       result <- cbind(coefficients,
                       sqrt(vars/m),
                       sqrt(vars*k/n),
                       coefficients/sqrt(vars*k/n),
-                      sqrt((1 + coefficients^2/vars/2/object$analyses[[1]]$df[2])*n/k/m))
+                      #sqrt((1 + coefficients^2/vars/2/object$analyses[[1]]$df[2])*n/k/m)
+                      sqrt(1 + coefficients^2/vars/4/object$analyses[[1]]$df[2] * n/k/m))  #!?????
       dimnames(result)[[2]] <- c("B.syn","se(B.syn)","se(Beta).syn","Z.syn","se(Z.syn)")
     } else {
       ## proper synthesis
@@ -218,13 +232,25 @@ summary.fit.synds <- function(object, population.inference = FALSE, msel = NULL,
                       sqrt(vars*(1+k/n)/m), 
                       sqrt(vars*k/n),
                       coefficients/sqrt(vars*k/n),
-                      sqrt((1 + k/n + coefficients^2/vars/2/object$analyses[[1]]$df[2])*n/k/m))
+                      #sqrt((1 + k/n + coefficients^2/vars/2/object$analyses[[1]]$df[2])*n/k/m)
+                      sqrt(1 + coefficients^2/vars/4/object$analyses[[1]]$df[2]*n/k/m))    #!?????
       dimnames(result)[[2]] <- c("B.syn","se(B.syn)","se(Beta).syn","Z.syn","se(Z.syn)")
     }
 
   } else { ## pop inference to Q
 
-    if (object$proper == F){
+  	if(partly == TRUE){
+      bm = c(0)
+      for(i in 1:m){
+        bm = bm + ((object$mcoef[i,] - object$mcoefavg)^2 / (m - 1))
+      }
+      result <- cbind(coefficients,
+                      sqrt(bm/m + vars),
+                      coefficients/sqrt(bm/m + vars))
+                      #sqrt((1 + coefficients^2/vars/2/object$analyses[[1]]$df[2])*n/k/m)
+      dimnames(result)[[2]] <- c("B.syn","se(B.syn)","Z.syn")
+    }
+    else if (object$proper == F){
       ## simple synthesis
       Tf <- vars*(k/n+1/m)
       result <- cbind(coefficients,sqrt(Tf),coefficients/sqrt(Tf))
@@ -267,9 +293,9 @@ print.summary.fit.synds <- function(x, ...) {
     print(x$call)
     cat("\nCombined estimates:\n")
     if (x$population.inference){
-      print(x$coefficients[,c("B.syn","se(B.syn)")])
+      print(x$coefficients[,c("B.syn","se(B.syn)","Z.syn")])
     } else {
-      print(x$coefficients[,c("B.syn","se(Beta).syn")])
+      print(x$coefficients[,c("B.syn","se(Beta).syn","Z.syn")])
     }
   } else {
     cat("\nCall:\n")
@@ -287,13 +313,15 @@ print.summary.fit.synds <- function(x, ...) {
 ###-----print.compare.fit.synds--------------------------------------------
 
 print.compare.fit.synds <- function(x, ...){
-  cat("\nCall used to fit models to the synthetised data set(s):\n")
-  print(x$fit.synds.call)
+  cat("\nCall used to fit models to the data:\n")
+  print(x$call)
   if (!is.null(x$coef.obs)){
     cat("\nEstimates for the observed data set:\n")
     print(x$coef.obs)
     cat("\nCombined estimates for the synthetised data set(s):\n")
-    print(x$coef.syn)
+    print(x$coef.syn[,c("B.syn","se(Beta).syn","se(B.syn)","Z.syn")])
+    cat("\nDifferences synthetic vs. observed:\n")
+    print(cbind.data.frame(x$coef.diff,x$ci.overlap))                                 
   }
   if (!is.null(x$ci.plot)){
     cat("\nConfidence interval plot:\n")
@@ -325,24 +353,33 @@ print.compare.synds <- function(x, ...) {
 
 
 ###-----print.utility.synds------------------------------------------------
-#Date: 23/06/15
-#Author: Joshua Snoke
-#Title: Utility Score Print Function
 
-#print.utility.synds <- function(x, ...){
-#  
-#	cat("\nMethod:\n($method)\n")
-#	cat(x$Method,"\n")
-#	
-#	cat("\nMean and SD propensity score utility value for synthetized data: \n($Summary)\n")
-#	print(x$Summary)
-#	
-#	cat("\nIndividual propensity score utility values for each synthetic set (first few if numerous): \n($Raw)\n")
-#	print(head(x$Raw))
-#	
-#	invisible(x)
-#
-#}
+print.utility.synds <- function(x, ...){
+  
+	cat("\nMethod:\n($method)\n")
+	cat(x$method,"\n")
+	
+	cat("\nMean and SD of propensity score utility value: \n($utility.summary)\n")
+	print(x$utility.summary)
+	
+#	cat("\nPropensity score utility values for each synthetic set \n(first few if numerous): \n($utility.raw)\n")
+#	print(head(x$utility.raw))
+
+  if(!is.null(x$deviance.summary)){
+    cat("\nMean and SD of propensity deviance statistics: \n($deviance.summary)\n")
+    print(x$deviance.summary)
+
+#    cat("\nPropensity deviance statistics for each synthetic set \n(first few if numerous): \n($deviance.raw)\n")
+#    print(head(x$deviance.raw))
+  }
+	
+	if(!is.null(x$nullstats.summary)){
+    cat("\nNull distribution statistics: \n($nullstats.summary)\n")
+    print(x$nullstats.summary)
+	}
+	
+	invisible(x)
+}
 
                                
 
