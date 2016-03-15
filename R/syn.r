@@ -312,28 +312,32 @@ check.method.syn <- function(setup, data, proper) {
  }
 
  # remove constant variables but leave passive variables untouched
- # factors with missing data won't count as NA is made into an additional level
+ # factors and character variables with missing data won't count,
+ # as NA is made into an additional level
  for(j in 1:nvar) {
- #
- #  GR change    #NA replaced with length(table(data[,j]))-1
- #
    if (!is.passive(method[j])){
-     v <- ifelse(is.character(data[,j]),length(table(data[,j]))-1,var(data[,j],na.rm=TRUE))
-     if (!is.na(v)) constant <- (v < 1000 * .Machine$double.eps) else
-     constant <- is.na(v) | v < 1000 * .Machine$double.eps
+     if (is.numeric(data[,j])){
+       v <- var(data[,j], na.rm=TRUE)
+       if (!is.na(v)) constant <- (v < 1000 * .Machine$double.eps) else
+       constant <- is.na(v) | v < 1000 * .Machine$double.eps
+     } else {
+       constant <- all(duplicated(data[,j])[-1L])
+     }
+
      if (constant) {
-       if (any(vis==j) & any(pred[,j]!=0)) cat("Variable ",varnames[j],
+       if (any(vis==j) & any(pred[,j]!=0)) cat("Variable ", varnames[j],
          " removed from visit sequence and as predictor because only one value.\n\n",sep="")
-       else if (any(vis==j)) cat("Variable ",varnames[j],
+       else if (any(vis==j)) cat("Variable ", varnames[j],
          " removed from visit sequence  because only one value.\n\n",sep="")
-       else if (any(pred[,j]!=0)) cat("Variable ",varnames[j],
+       else if (any(pred[,j]!=0)) cat("Variable ", varnames[j],
          " removed as predictor because only one value.\n\n",sep="")
-     pred[,j]  <- 0
-     pred[j,]  <- 0
-     method[j] <- ""
+       pred[,j]  <- 0
+       pred[j,]  <- 0
+       method[j] <- ""
      }
    }
  }
+ 
  ############   this bit moved after constants out
  # check method for variables without predictors
  # set to "sample" if method is not valid
@@ -729,7 +733,7 @@ check.rules.syn <- function(setup, data) {
    for (j in vartofactor) {
      if (setup$method[j] %in% c("norm","norm.proper",
                                 "normrank","normrank.proper")) {
-       if (nlevels[j]==2) setup$method[j] <- default.method[2]
+       if (nlevel[j]==2) setup$method[j] <- default.method[2]
        else setup$method[j] <- default.method[3]
   	   cat("Method for ",varnames[j]," changed to ",setup$method[j],"\n\n")
      }

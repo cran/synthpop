@@ -190,10 +190,12 @@ sampler.syn <- function(p, data, m, syn, visit.sequence,
   #    }
 
       #turn NA level in factors to missing NA's
+      # and remove contrasts 
       for (j in (1:ncol(syn[[i]]))){
         if(is.factor(syn[[i]][,j])) {
         #  syn[[i]][,j] <- factor(syn[[i]][,j],exclude=NA,levels=levels(syn[[i]][,j]))
           levels(syn[[i]][,j])[levels(syn[[i]][,j])=="NAtemp"] <- NA     #!BN 10/08/15 
+          attributes(syn[[i]][,j])$contrasts <- NULL
         }
       }
 
