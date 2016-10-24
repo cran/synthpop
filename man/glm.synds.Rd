@@ -4,8 +4,9 @@
 \alias{print.fit.synds}
 \title{Fitting (generalized) linear models to synthetic data}
 \description{
-  Fits generalized linear models or simple linear models to the synthesised data set(s) 
-  using \code{\link[stats]{glm}} and \code{\link[stats]{lm}} function respectively.
+  Fits generalized linear models or simple linear models to the synthesised 
+  data set(s) using \code{\link[stats]{glm}} and \code{\link[stats]{lm}} 
+  function respectively.
 }
 \usage{
 glm.synds(formula, family = "binomial", data,  ...)
@@ -14,15 +15,13 @@ lm.synds(formula, data, ...)
 \method{print}{fit.synds}(x, msel = NULL, \dots)
 }
 \arguments{
-  \item{formula}{a symbolic description of the model 
-    to be estimated. A typical model has the form 
-    \code{response ~ predictors}. See
+  \item{formula}{a symbolic description of the model to be estimated. 
+    A typical model has the form \code{response ~ predictors}. See
     the documentation of \code{\link[stats]{glm}} and
     \code{\link[stats]{formula}} for details.}
   \item{family}{a description of the error distribution 
-    and link function to be used in the model. See
-    the documentation of \code{\link[stats]{glm}} and
-    \code{\link[stats]{family}} for details.}
+    and link function to be used in the model. See the documentation of 
+    \code{\link[stats]{glm}} and \code{\link[stats]{family}} for details.}
   \item{data}{an object of class \code{synds}, which stands
     for 'synthesised data set'. It is typically created by
     function \code{\link{syn}} and it includes \code{data$m} 

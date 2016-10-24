@@ -196,9 +196,9 @@ summary.fit.synds <- function(object, population.inference = FALSE, msel = NULL,
 { # df.residual changed to df[2] because didn't work for lm - check if that's ok
   if (!class(object) == "fit.synds") stop("Object must have class fit.synds\n")
   m <- object$m
-  k <- object$k
-  n <- object$n
-  
+  n <- sum(object$n)                                                     #!BN-15/08/2016, strata
+  if (is.list(object$k)) k <- sum(object$k[[1]]) else k <- sum(object$k) #!BN-15/08/2016, strata 
+    
   coefficients <- object$mcoefavg     # mean of coefficients (over m syntheses)
   vars <- object$mvaravg              # mean of variances (over m syntheses)
 
@@ -381,7 +381,45 @@ print.utility.synds <- function(x, ...){
 	invisible(x)
 }
 
-                               
+
+###-----print.tab.utility--------------------------------------------------
+
+print.tab.utility <- function(x,tables = FALSE, digits = 2, ...){
+  cat("Total number of cells in table: ", x$df[1] + x$nempty[1] + 1,"\n")
+	cat("Number of non-empty cells in table: ", x$df + 1,"\n")
+  cat("\nChi-squared:\n($Chisq)\n")
+	cat(x$Chisq,"\n")
+	cat("\nNominal degrees of freedom: \n($df)\n")
+	cat(x$df,"\n")
+	cat("\nRatio:\n($ratio)\n")
+  cat(x$ratio,"\n")
+  # cat("\np-value:\n($pval)\n")
+  # cat(x$pval,"\n")
+  
+  if(tables==TRUE) {
+    cat("\nObserved \n($tab.obs)\n")
+	  print(x$tab.obs)
+    cat("\nSynthesised \n($tab.syn)\n")
+	  print(x$tab.syn)
+    cat("\nZ score for differences: \n($tab.Zdiff)\n")
+	  if (length(x$pval) == 1){
+      print(round(x$tab.Zdiff, digits))
+	  } else {
+		  print(lapply(x$tab.Zdiff, round, digits))
+      
+      meantab <- x$tab.Zdiff[[1]]
+		  for (i in 2:(length(x$tab.Zdiff))) {
+			  meantab <- (i-1)/i*meantab + x$tab.Zdiff[[i]]/i
+		  }
+		  meantab <- meantab*sqrt(length(x$tab.Zdiff))
+      cat("\nZ score for combined tables:\n")
+		  print(round(meantab, digits))
+	  }
+  }
+ 	invisible(x)
+}
+  
+
 
 ###-----summary.out--------------------------------------------------------
 summary.out <- function (z, digits = max(3L, getOption("digits") - 3L), ...)

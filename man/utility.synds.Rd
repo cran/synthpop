@@ -105,8 +105,11 @@ utility.synds(object, data, method = "cart", cp = 0.0001, maxorder = 1,
   \emph{Journal of the American Statistical Association},
   \bold{79}(387), 516-524.
   
-  Snoke, J., Nowok, B., Raab, G.M., Dibben, C. and Slavkovic, A. (forthcoming). 
+  Snoke, J., Raab, G.M., Nowok, B., Dibben, C. and Slavkovic, A. (forthcoming). 
   General and specific utility measures for synthetic data. 
+}
+\seealso{
+ \code{\link{tab.utility}}
 }
 \examples{
   ods <- SD2011[1:1000, c("age", "bmi", "depress", "alcabuse", "englang")]

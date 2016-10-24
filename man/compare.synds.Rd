@@ -7,8 +7,8 @@
 \description{
  Compare synthesised data set with the original (observed) data set 
  using percent frequency tables and histograms. When more than one 
- synthetic data set has been generated (object$m>1), by default pooled 
- synthetic data are used for comparison.
+ synthetic data set has been generated (\code{object$m>1}), by default 
+ pooled synthetic data are used for comparison.
 }
 \usage{
 \method{compare}{synds}(object, data, vars = NULL, msel = NULL, 
@@ -46,6 +46,11 @@ An object of class \code{compare.synds} which is a list including a list
 of comparative percent frequency tables (\code{tables}) and 
 a ggplot object (\code{plots}) with bar charts/histograms. If multiple plots
 are produced they and their corresponding frequency tables are stored as a list. 
+}
+\references{
+  Nowok, B., Raab, G.M and Dibben, C. (2016). synthpop: Bespoke
+  Creation of Synthetic Data in R. \emph{Journal of Statistical Software},
+  \bold{74}(11), 1-26. doi:10.18637/jss.v074.i11
 }
 \examples{
 ods <- SD2011[ , c("sex","age","edu","marital","ls","income")]

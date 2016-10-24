@@ -375,3 +375,162 @@ null.compute <- function(util, syn, method, cp, maxorder, ...){
     
  return(list("MSEDiffRatio" = mseDiffRat, "NullUtility" = self))
 }
+
+
+
+###-----tab.utility--------------------------------------------------------
+# utility measure for tabular data  
+
+tab.utility <- function(object, data, vars = NULL, ngroups = 5, 
+                        with.missings = TRUE, ...) 
+{
+ # CHECKS #---                                
+ if (is.null(data)) 
+   stop("Requires parameter 'data' to give name of the real data.\n", 
+   call. = FALSE)
+ if (!class(data) == "data.frame") 
+   stop("Data must have class 'data.frame'.\n", call. = FALSE)
+ if (!class(object) == "synds") 
+   stop("Object must have class 'synds'.\n", call. = FALSE)
+
+ if (is.null(vars)) stop("Need to set variables with vars parameter.\n", call. = FALSE)
+ else if (!(all(vars %in% names(data)))) stop("Unrecognized variable(s) in vars parameter: ", 
+   paste(vars[!(vars %in% names(data))],collapse=", "), call. = FALSE)
+ #--- 
+ 
+ data  <- data[, vars, drop=FALSE]
+ nvars <- ncol(data)  
+ data.orig <- data
+ 
+ m <- object$m
+ if (m==1) syndata <- list(object$syn) else syndata <- object$syn   
+ syndata <- lapply(syndata,'[',vars)
+ 
+ dfs <- ratios  <- chis <- pvals <- nempties <- vector("numeric", m)
+ tabs <- Ztab <- vector("list", m) 
+
+ for (i in 1:m) {
+   data <- data.orig
+      
+   # make all variables into factors
+   for (j in 1:nvars) {
+ 	   if (is.numeric(data[,j])){
+	     grpd <- group_num(data[,j], syndata[[i]][,j], ngroups)
+		   data[,j] <- grpd[[1]]; syndata[[i]][,j] <- grpd[[2]]
+	   } else if (is.character(data[,j])) {
+	     data[,j] <- factor(data[,j])
+	     syndata[[i]][,j] <- factor(syndata[[i]][,j],levels=levels(data[,j]))
+	   }
+     if (with.missings==TRUE & any(is.na(data[,j]))){
+       data[,j] <- addNA(data[,j]) ### makes missings into part of factors 
+       syndata[[i]][,j] <- addNA(syndata[[i]][,j]) ### makes missings into part of factors
+     }
+   }
+
+   tabs[[i]] <- xtabs(~., data = syndata[[i]])
+   if (i==1) {
+     tabd <- xtabs(~., data = data)  #! can tabd be different for different m???
+     totcells <- length(tabd)        #!
+   }
+   dfs[i] <- totcells - sum(tabd + tabs[[i]] == 0) - 1
+   diffs <- tabs[[i]] - tabd
+   expect <- (tabs[[i]] + tabd)/2
+   tabsq  <- diffs^2/expect
+   tabsq[expect==0] <- 0
+   chis[i] <- sum(tabsq)
+   Ztab[[i]] <- diffs/sqrt(expect)
+   # pvals[i] <- 1 - pchisq(chis[i],dfs[i])
+   ratios[i] <- chis[i] / dfs[i]  
+   nempties[i] <- sum(tabd + tabs[[i]] == 0)
+ }  
+  
+ if (m==1) {
+   tabs <- tabs[[1]]
+   Ztab <- Ztab[[1]]
+ } 
+   
+ res <- list(Chisq = chis,
+   df = dfs,
+   ratio = ratios,
+   # pval = pvals,
+   nempty = nempties,
+   tab.obs = tabd,
+   tab.syn = tabs,
+   tab.Zdiff = Ztab)
+
+ class(res) <- "tab.utility"
+ return(res)
+
+}
+
+
+###-----group_num----------------------------------------------------------
+
+# function to make groups of any continuous variables
+
+group_num <- function(x1, x2, n = 5, cont.na = NULL){
+#
+# makes 2 cont variable into a factor of n groups with same groupings
+# determined by first one
+# groups will often be of uneven size because of missing values
+# there may even be fewer than n groups if there are big sets of repeats
+#
+#
+ if (length(cont.na)==0) cc <- NULL
+ if (!is.numeric(x1)) stop ("x must be numeric\n")
+ xn <- x1[!(x1 %in% cont.na | is.na(x1))]
+ #print(table(x1 %in% cont.na) )
+ #print(length(xn))
+ xr <- rank(xn)
+ ptiles <- round(c(length(xr)*(1:(n-1))/n,max(xr)))
+ #ptiles
+ ptiles <- xn[order(xn)][ptiles]
+  ptiles <- ptiles[!duplicated(ptiles)]##  to allow for repeated values
+ xnew <- rep(1,length(xn))
+ for (i in 2:length(ptiles)) xnew[xn>ptiles[i-1] & xn<=ptiles[i]] <- i
+ xnew <- factor(xnew)
+ res1 <- x1
+ res1[!(x1 %in% cont.na | is.na(x1))]<-xnew
+# cat("\npercentiles ",ptiles,"\n")############################################################################
+
+# now next one
+xn<-x2[!(x2 %in% cont.na | is.na(x2))  ]
+xnew=rep(1,length(xn))
+for (i in 2:length(ptiles)) xnew[xn>ptiles[i-1] & xn<=ptiles[i]]<-i
+xnew<-factor(xnew)
+res2<-x2
+res2[!(x2 %in% cont.na | is.na(x2))]<-xnew
+
+# now make into factors including missing and cont.na data
+nlev<-length(table(c(res1[!(x1 %in% cont.na | is.na(x1))],res2[!(x2 %in% cont.na | is.na(x2))])))
+labels=paste("Gp",1:nlev)
+#print(labels)
+if (any(is.na(c(res1,res2)))) {
+    res1[is.na(res1)]<-nlev+1
+    res2[is.na(res2)]<-nlev+1
+	labels<-c(labels,"missing")
+}
+if (!is.null(cont.na)) {
+    exlevs<-cont.na[!is.na(cont.na)]
+    for ( i in 1:length(exlevs)){
+      res1[res1==exlevs[i]]<-nlev+i
+      res2[res2==exlevs[i]]<-nlev+i
+    }
+	labels<-c(labels,as.character(exlevs))
+	#print(labels)
+	#print(table(res1))
+}
+#print(labels)
+res1<-factor(res1,labels=labels)
+res2<-factor(res2,labels=labels)
+#print(table(res1))
+for(i in 1:length(labels)) labels[i]<-paste(range(c(x1[res1==labels[i]],x2[res2==labels[i]])),collapse="-")
+#print(labels)
+res1<-factor(res1,labels=labels)
+res2<-factor(res2,labels=labels)
+
+list(res1,res2)
+}          
+
+
+

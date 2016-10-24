@@ -60,7 +60,7 @@ compare.synds <- function(object, data, vars = NULL,
    for (i in 1:length(msel)) df.syn[[i]] <- synds[[i]][, commonnames, drop = FALSE]
  }
  num <- sapply(df.synall, is.numeric) | sapply(df.synall, is.integer)  
- fac <- sapply(df.synall, is.factor)  
+ fac <- sapply(df.synall, function(x) is.factor(x) | is.logical(x))  
 
  # to exclude from summaries if no missing in data
  if (sum(num) > 0) any.num.na <- unlist(apply(df.obs[num,,drop=FALSE],2,function(x) any(is.na(x))))  
@@ -293,15 +293,15 @@ compare.fit.synds <- function(object, data, plot = "Z",
  # get fit to real data
  if (fitting.function=="lm") {
  real.fit <- summary(do.call(object$fitting.function,
-                     args=list(formula=object$call$formula,data=call$data)))
+                     args=list(formula=formula(object),data=call$data)))
  } else {
  real.fit <- summary(do.call(object$fitting.function,
-                     args=list(formula=object$call$formula,
+                     args=list(formula=formula(object),
                      family=object$call$family,data=call$data)))
  }
 
  if (return.plot == TRUE){
-   yvar <- as.character(object$call$formula[2])
+   yvar <- as.character(formula(object)[[2]])
 
    # prepare data for plotting confidence intervals (one data frame)
    if (plot=="Z"){
@@ -380,7 +380,7 @@ dfCI <- function(modelsummary, names.est.se = c("Estimate","Std. Error"),
   msCI$LowCI  <- msCI$Value - CI*msCI$SE
   msCI$SE     <- NULL
   msCI$Model  <- model.name
-  msCI$Coefficient <- factor(msCI$Coefficient, levels = msCI$Coefficient)
+  msCI$Coefficient <- factor(msCI$Coefficient, levels = rev(msCI$Coefficient))  #!BN290416, rev added 
 
   return(msCI)
 }

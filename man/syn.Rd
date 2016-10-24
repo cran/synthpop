@@ -1,27 +1,41 @@
 \name{syn}
 \alias{syn}
+\alias{syn.strata}
 \alias{print.synds}
 \title{Generating synthetic data sets}
 \description{
-  Generates synthetic version(s) of a data set.
+  Generates synthetic version(s) of a data set. \code{syn.strata} performs 
+  stratified synthesis.
 }
 
 \usage{
 syn(data, method = vector("character", length = ncol(data)), 
     visit.sequence = (1:ncol(data)), predictor.matrix = NULL,  
-    m = 1, k = nrow(data), proper = FALSE, minnumlevels = 5,  
+    m = 1, k = nrow(data), proper = FALSE, minnumlevels = -1,  
     maxfaclevels = 60, rules = NULL, rvalues = NULL, 
     cont.na = NULL, semicont = NULL, smoothing = NULL, 
     event = NULL, denom = NULL, drop.not.used = FALSE, drop.pred.only = FALSE,
-    default.method = c("normrank", "logreg", "polyreg", "polr"), 
-    diagnostics = FALSE, print.flag = TRUE, seed = "sample", ...)
+    default.method = c("normrank", "logreg", "polyreg", "polr"), models = FALSE,
+    print.flag = TRUE, seed = "sample", ...)
+    
+syn.strata(data, strata = NULL, 
+    minstratumsize = 10 + 10 * length(visit.sequence),  
+    tab.strataobs = TRUE, tab.stratasyn = FALSE,
+    method = vector("character", length = ncol(data)),
+    visit.sequence = (1:ncol(data)), predictor.matrix = NULL,
+    m = 1, k = nrow(data), proper = FALSE, minnumlevels = 5, 
+    maxfaclevels = 60, rules = NULL, rvalues = NULL,
+    cont.na = NULL, semicont = NULL, smoothing = NULL, 
+    event = NULL, denom = NULL, drop.not.used = FALSE, drop.pred.only = FALSE,
+    default.method = c("normrank","logreg","polyreg","polr"), models = FALSE,
+    print.flag = TRUE, seed = "sample", ...)    
    
 \method{print}{synds}(x, \dots)   
 }
 
 \arguments{
-  \item{data}{a data frame or a matrix (\code{n} x \code{p}) containing the original data. 
-     Observations are in rows and variables are in columns.}
+  \item{data}{a data frame or a matrix (\code{n} x \code{p}) containing the 
+     original data. Observations are in rows and variables are in columns.}
   \item{method}{a single string or a vector of strings of length
      \code{ncol(data)} specifying the synthesising method to be
      used for each variable in the data. Order of variables is exactly the
@@ -32,10 +46,11 @@ syn(data, method = vector("character", length = ncol(data)),
      default synthesising method specified by the \code{default.method} argument
      are applied. Variables that are transformations of other variables can
      be synthesised using a passive method that is specified as a string 
-     starting with \code{~}. Variables that need not to be synthesised have the empty
-     method \code{""}. By default all variables are synthesised using
-     \code{ctree} implementation of a CART model. See details for more
-     information.}
+     starting with \code{~} (see \code{\link{syn.passive}}). Variables that need 
+     not to be synthesised have the empty method \code{""}. By default all 
+     variables are synthesised using \code{"cart"} method, which is 
+     \code{rpart} implementation of a CART model (see \code{\link{syn.cart}}). 
+     See details for more information on method.}
   \item{visit.sequence}{a character vector of names of variables or an integer 
      vector of their column indices specifying the order of synthesis.
      The default sequence \code{1:ncol(data)} implies that column variables are
@@ -60,7 +75,9 @@ syn(data, method = vector("character", length = ncol(data)),
      If \code{TRUE} proper synthesis is conducted.}
   \item{minnumlevels}{a minimum number of values a numeric variable should
      have to be treated as numeric. Numeric variables with fewer levels
-     than \code{minnumlevels} are changed into factors.}
+     than \code{minnumlevels} are changed into factors. If set to \code{-1}
+     (default) numeric variables are left unchanged regardless of the number
+     of values.}
   \item{maxfaclevels}{a maximum number of factor levels that can be handled.
      It can be increased but it may cause computational problems, especially 
      for parametric methods.}
@@ -92,7 +109,7 @@ syn(data, method = vector("character", length = ncol(data)),
   \item{denom}{a named list specifying for variables to be modelled using 
      binomial regression the names of corresponding denominator variables. 
      The names of the list elements must correspond to the names of the 
-     variables to to be modelled using binomial regression.}
+     variables to be modelled using binomial regression.}
   \item{drop.not.used}{a logical value. If \code{TRUE} (default) variables not 
      used in synthesis are not saved in the synthesised data and are not 
      included in the corresponding synthesis parameters.}
@@ -105,9 +122,8 @@ syn(data, method = vector("character", length = ncol(data)),
      and ordered factors with more than two levels respectively. 
      They are used when \code{method} is set to \code{"parametric"} or 
      when there is an inconsistency between variable type and provided method.}
-  \item{diagnostics}{a logical value. If \code{TRUE} diagnostic information are
-     appended to the value of the function. If \code{FALSE} (default) only the
-     synthesised data are saved.}
+  \item{models}{if \code{TRUE} estimates of models fitted to the original data 
+     and used to generate the synthetic values are stored.}
   \item{print.flag}{if \code{TRUE} (default) synthesising history and 
      information messages will be printed at the console. For silent 
      computation use \code{print.flag = FALSE}.}
@@ -117,6 +133,15 @@ syn(data, method = vector("character", length = ncol(data)),
      to \code{NA}.}
   \item{\dots}{additional arguments to be passed to synthesising functions. See 
      section 'Details' below for more information.}
+  \item{strata}{a numeric vector with strata identifiers or a string vector with 
+     names of stratifying variable(s).} 
+  \item{minstratumsize}{minimum size of each stratum.}    
+  \item{tab.strataobs}{a logical value indicating whether a frequency table of
+     the number of observations in strata in the original data set should be 
+     printed.}   
+  \item{tab.stratasyn}{a logical value indicating whether a frequency table of
+     the number of observations in strata in the synthetic data set(s) should 
+     be printed.}           
   \item{x}{an object of class \code{synds}; a result of a call to \code{syn}.}
 }
 
@@ -125,10 +150,10 @@ syn(data, method = vector("character", length = ncol(data)),
  \code{method} are synthesised. The only exceptions are event indicators. They 
  are synthesised along with the corresponding time to event variables and should
  not be included in \code{visit.sequence}. All other variables (not in 
- \code{visit.sequence} or in \code{visit.sequence} with a corresponding blank method) 
- can be used as predictors. Including them in \code{visit.sequence} generates 
- a default \code{predictor.matrix} reflecting the order of variables in
- the \code{visit.sequence} otherwise \code{predictor.matrix} has to be 
+ \code{visit.sequence} or in \code{visit.sequence} with a corresponding blank 
+ method) can be used as predictors. Including them in \code{visit.sequence} 
+ generates a default \code{predictor.matrix} reflecting the order of variables 
+ in the \code{visit.sequence} otherwise \code{predictor.matrix} has to be 
  adjusted accordingly. All predictors of the variables that are not in
  \code{visit.sequence} or are in \code{visit.sequence} but with a blank method
  are removed from \code{predictor.matrix}.
@@ -161,6 +186,8 @@ syn(data, method = vector("character", length = ncol(data)),
    \item{pmm}{predictive mean matching}
    \item{sample}{random sample from the observed data}
    \item{passive}{function of other synthesised data}
+   \item{nested}{bootstrap sample within each category of the original grouping 
+     variable)}
   }
  The functions corresponding to these methods are called \code{syn.method}, 
  where \code{method} is a string with the name of a synthesising method. 
@@ -168,6 +195,13 @@ syn(data, method = vector("character", length = ncol(data)),
  \code{syn.ctree}. A new synthesising method can be introduced by writing 
  a function named \code{syn.newmethod} and then specifying \code{method} 
  parameter of \code{syn} function as \code{"newmethod"}.
+ 
+ In order to use \code{"nested"} sampling, \code{method} parameter of \code{syn} 
+ function has to be specified as \code{"nested.varname"}, where \code{"varname"}
+ is the name of the grouped (less detailed) variable, the only one used in 
+ nested synthesis. A variable synthesised using \code{"nested"} method is 
+ excluded from synthesising other variables except when used for \code{"nested"} 
+ method.  
  
  Additional parameters can be passed to synthesising methods as part of the 
  \code{dots} argument. They have to be named using period-separated method and 
@@ -225,8 +259,17 @@ syn(data, method = vector("character", length = ncol(data)),
   \item{val.lab}{a list value labels for factors for data imported from SPSS 
      using \code{read.obs()}.}       
   \item{obs.vars}{a vector of all variable names in the observed data set.}
+  \item{models}{estimates of models fitted to the original data and used to 
+     generate the synthetic values.}
 }
 \note{See package vignette for additional information.}
+
+\references{
+  Nowok, B., Raab, G.M and Dibben, C. (2016). synthpop: Bespoke
+  Creation of Synthetic Data in R. \emph{Journal of Statistical Software},
+  \bold{74}(11), 1-26. doi:10.18637/jss.v074.i11
+}
+
 \seealso{\code{\link{compare.synds}}, \code{\link{summary.synds}}}
 
 \examples{
@@ -244,7 +287,7 @@ s2$method
   
 ### multiple synthesis of selected variables with customised methods
 s3 <- syn(ods, visit.sequence = c(2, 1, 4, 5), m = 2,
-          method = c("logreg","sample","","normrank", "ctree",""),
+          method = c("logreg","sample","","normrank","ctree",""),
           ctree.minbucket = 10)
 summary(s3)
 summary(s3, msel = 1:2)
@@ -266,6 +309,9 @@ s6 <- syn(ods, rules = list(marital = "age < 18 & sex == 'MALE'"),
 with(s6$syn, table(marital[age < 18 & sex == 'MALE']))
 ### results for default parametric synthesis without the rule  
 with(s2$syn, table(marital[age < 18 & sex == 'MALE']))
+
+### stratified synthesis
+s7 <- syn.strata(ods, strata = "sex")
 }
 
 \keyword{datagen}

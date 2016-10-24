@@ -1,10 +1,62 @@
+synthpop 1.3-0
+---------------
+
+NEW FEATURES
+* Storing results of CART models when `models` set to TRUE.
+* Function syn.strata() for stratified synthesis.
+* Function multi.compare() for multivariate comparison of synthesised and 
+  observed data.
+* Synthesising method "nested" for a variable nested within another variable.
+* Tabular utility function tab.utility() for comparing contingency tables from 
+  observed and synthesized data.
+* Parameter `uniques.exclude` for the sdc() function, which can be used to 
+  remove some variables from the identification of uniques.
+* Function replicated.uniques() returns a number of unique individuals in the 
+  original data set ($no.uniques).
+  
+CHANGES
+* Synthetic values of collinear variables are derived based on the one that 
+  is synthesised first and their method is set to "collinear". They do not 
+  have to be removed prior to synthesis. 
+* Synthesising method for constant variables is set to "constant" and the 
+  variables are not removed from the synthesised data set when 
+  `drop.not.used = TRUE`. 
+* Default synthesising `method` changed to "cart".
+* Default `minnumlevels` changed to -1 (during synthesis numeric variables are 
+  not changed to factors regardless of the number of distinct values). 
+* Coefficient estimates and their confidence intervals are ploted in the same 
+  order as they are presented in a tabular form.   
+* No message on the seed value used (it is stored in the result object).
+* Formula of the model to be fitted using glm.synds() or lm.synds() can be 
+  specified outside the function.
+* Massage for sdc() on number of replicated uniques also when it is equal to 
+  zero.   
+* Maximum number of iterations for a multinomial model used in `polyreg` and 
+  `polr` method increased to 1000 (`maxit` parameter). Message if the limit is 
+  reached.
+* write.syn() saves complete synds object into a file synobject_filename.RData. 
+* Error on exceeding `maxfaclevels` in not generated if `method` for the factor
+  is set to "sample" or "nested".
+* For constant variables method is changed to `constant`. 
+* Year format for variables `ymarr` and `ysepdiv` in SD2011 dataset changed 
+  from `yy` to `yyyy`.     
+
+BUG FIXES
+* Types and placement of special signs that are allowed in `rules` have been 
+  extended and include e.g. initial and closing round bracket.
+* compare.synds() provides output for logical variables.
+* Synthesis of logical variables with missing values.
+* Message about a change of method for a variable without predictors.
+* Check for `filetype` in write.syn() 
+
+
 synthpop 1.2-1
 ---------------
 
 BUG FIXES
-* No calling var(x) on a factor x (in checks)
-* No `contrasts` attribute for factors synthesised using parametric method
-* Misspelled vector name (nlevels) replaced with a correct one (nlevel)
+* No calling var(x) on a factor x (in checks).
+* No `contrasts` attribute for factors synthesised using parametric method.
+* Misspelled vector name (nlevels) replaced with a correct one (nlevel).
 
 
 synthpop 1.2-0
@@ -15,7 +67,7 @@ NEW FEATURES
   data with the original (observed) data using propensity scores. 
 * New measures for comparing model estimates based on synthesised and observed 
   data implemented in compare.fit.synds() function: standardized differences 
-  in coeffcient values(`coef.diff`) and confidence interval overlap (`ci.overlap`)
+  in coefficient values(`coef.diff`) and confidence interval overlap (`ci.overlap`).
 
 CHANGES
 * No dependency on `coefplot` package.  
@@ -76,7 +128,7 @@ NEW FEATURES
 * Function write.syn() to export synthetic data sets to external files and 
   create a text file with information about the synthesis.
 * syn() has new `semicont` parameter that allows to define spike(s) 
-  for semi-continuous variables in order to synthesise them seperately.
+  for semi-continuous variables in order to synthesise them separately.
 * `lognorm`, `sqrtnorm` and `cubertnorm` methods for synthesis by linear 
   regression after natural logarithm, square root or cube root transformation 
   of a dependent variable.  

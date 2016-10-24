@@ -7,7 +7,7 @@
   ordered polytomous regression (without or with bootstrap).
 }
 \usage{
-syn.polr(y, x, xp, proper = FALSE, maxit = 100, trace = FALSE, 
+syn.polr(y, x, xp, proper = FALSE, maxit = 1000, trace = FALSE, 
   MaxNWts = 10000, ...)
 }
 \arguments{

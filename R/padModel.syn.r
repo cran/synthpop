@@ -20,15 +20,15 @@ padModel.syn <- function(data, method, predictor.matrix, visit.sequence,
  # col3 = yes.no.dummy TRUE for dummy variables
  # col4 = corresponding.column.dummy original column number for dummies, else 0
 
-  pred.with.cart <- method %in% c("ctree","ctree.proper","cart","cart.proper")         #!BN1605
-
+  pred.with.cart <- method %in% c("ctree","ctree.proper","cart","cart.proper","myctree","mycart","collinear")  #!BN-1605; "myctree","mycart" - GR's test functions 
+                                                                                                 #!BN to check if collinear needed
   for(j in 1:nvar){
-    if ((is.factor(data[,j]) & any(predictor.matrix[1:nvar,j]!=0 & !pred.with.cart)) |  #!BN1605
-        (factorNA[j]==TRUE & !pred.with.cart[j])){                                     #!BN1605
+    if ((is.factor(data[,j]) & any(predictor.matrix[1:nvar,j]!=0 & !pred.with.cart)) |  #!BN-16/05/2016
+        (factorNA[j]==TRUE & !pred.with.cart[j])){                                     #!BN-16/05/2016
       categories[j, 1] <- TRUE
 
       # all factors defined to have treatment contrasts
-      data[, j] <- C(data[, j], contr.treatment)
+      #!data[, j] <- C(data[, j], contr.treatment)                              UNCOMMENT???? BN-28/04/2016
       n.dummy   <- length(levels(data[, j])) - 1
       categories[j, 2] <- n.dummy
 

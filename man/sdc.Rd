@@ -3,8 +3,9 @@
 \title{Tools for statistical disclosure control (sdc)}
 \description{Labeling and removing unique replicates of unique actual (observed) individuals.}
 \usage{
-sdc(object, data, label = NULL, rm.replicated.uniques = FALSE,
- recode.vars = NULL, bottom.top.coding = NULL, recode.exclude = NULL)
+sdc(object, data, label = NULL, rm.replicated.uniques = FALSE, 
+ uniques.exclude = NULL, recode.vars = NULL, bottom.top.coding = NULL, 
+ recode.exclude = NULL)
 }
 \arguments{
   \item{object}{an object of class \code{synds}, which stands
@@ -17,6 +18,8 @@ sdc(object, data, label = NULL, rm.replicated.uniques = FALSE,
   \item{rm.replicated.uniques}{a logical value indicating whether unique 
     replicates of units that are unique also in the orginal data set should 
     be removed.}
+  \item{uniques.exclude}{a single string or a vector of strings with name(s) 
+    of variable(s) to be excluded from the identification of uniques.}
   \item{recode.vars}{a single string or a vector of strings with name(s) 
     of variable(s) to be bottom- or/and top-coded.}
   \item{bottom.top.coding}{a list of two-element vectors specifing 

@@ -6,7 +6,7 @@
   replicates unique units in the original observed data set.
 }
 \usage{
-replicated.uniques(object, data)
+replicated.uniques(object, data, exclude = NULL)
 }
 \arguments{
   \item{object}{an object of class \code{synds}, which stands
@@ -14,6 +14,8 @@ replicated.uniques(object, data)
     function \code{syn()} and it includes \code{object$m} 
     synthesised data set(s).}
   \item{data}{the original observed data set.}
+  \item{exclude}{a single string or a vector of strings with name(s) 
+    of variable(s) to be excluded from the identification of uniques.}
 }
 \value{
   A list with the following components:
@@ -22,6 +24,7 @@ replicated.uniques(object, data)
    values indicateing duplicates in \code{m}th synthetic data set.}
   \item{no.replications}{a single number or a vector of \code{object$m} integers
    indicating the number of duplicates in the synthetic data set(s).}  
+  \item{no.uniques}{a number of unique individuals in the original data set.}  
   \item{per.replications}{a single number or a vector of \code{object$m} numeric 
    values indicating the percentage of duplicates in the synthetic data set(s).} 
 }

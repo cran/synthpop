@@ -56,7 +56,8 @@ syn.norm <- function(y, x, xp, proper = FALSE, ...)
   }  
   res <- xp %*% parm$beta + rnorm(nrow(xp)) * parm$sigma
   res <- round(res,max(sapply(y,decimalplaces)))
-  return(res)
+  
+  return(list(res = res, fit = parm))
 }
 
 
@@ -79,7 +80,8 @@ syn.lognorm <- function (y, x, xp, proper = FALSE, ...)
   if (addbit) {res <- res-.5*min(y[y!=0]); res[res<=0] <- 0}
   res <- exp(res)
   res <- round(res,max(sapply(y,decimalplaces)))
-  return(res)
+  
+  return(list(res = res, fit = parm))
 }
 
 
@@ -100,7 +102,8 @@ syn.sqrtnorm <- function (y, x, xp, proper = FALSE, ...)
   res <- xp %*% parm$beta + rnorm(nrow(xp)) * parm$sigma
   res <- res^2
   res <- round(res,max(sapply(y,decimalplaces)))
-  return(res)
+  
+  return(list(res = res, fit = parm))
 }
 
 
@@ -121,7 +124,8 @@ syn.cubertnorm <- function (y, x, xp, proper = FALSE, ...)
   res <- xp %*% parm$beta + rnorm(nrow(xp)) * parm$sigma
   res <- res^3
   res <- round(res,max(sapply(y,decimalplaces)))
-  return(res)
+
+  return(list(res = res, fit = parm))
 }
 
 
@@ -176,7 +180,8 @@ syn.normrank <- function(y, x, xp, smoothing, proper = FALSE, ...)
     ydsamp[ys] <- pmax(pmin(ydsamp[ys],maxy),min(y))
     res <- sort(ydsamp)[res]
   }
-  return(res)
+
+  return(list(res = res, fit = parm))
 }
 
 
@@ -213,7 +218,8 @@ syn.ranknorm <- function(y, x, xp, proper = FALSE, ...)
   if (nrow(x)== nrow(xp)) rankpred <- rank(pred)
   else rankpred <- newrank(pred,length(y))
   res  <- sort(sample(y,replace=TRUE))[rankpred]  ##  note bootstrap added
-  return(res)
+  
+  return(list(res = res, fit = parm))
 }
 
 
@@ -251,7 +257,9 @@ syn.pmm <- function (y, x, xp, proper = FALSE, ...)
   }
   yhatobs <- x  %*% parm$coef
   yhatmis <- xp %*% parm$beta
-  return(apply(as.array(yhatmis), 1, .pmm.match, yhat=yhatobs, y=y, ...))
+  res <- apply(as.array(yhatmis), 1, .pmm.match, yhat=yhatobs, y=y, ...)
+  
+  return(list(res = res, fit = parm))
 }
 
 
@@ -342,7 +350,8 @@ syn.logreg <- function(y, x, xp, denom = NULL, denomp = NULL,
     p   <- 1/(1 + exp(-(xp %*% beta)))  
     vec <- (runif(nrow(p))<= p)
     if (!is.logical(y)) vec <- as.numeric(vec)          
-    if (is.factor(y))   vec <- factor(vec,c(0,1),labels=levels(y))
+    if (is.factor(y)) vec <- factor(vec,c(0,1),labels=levels(y))
+  
   } else {
     aug <- augment.syn(y, x, ...)
     # when no missing data must set xf to augmented version
@@ -364,16 +373,16 @@ syn.logreg <- function(y, x, xp, denom = NULL, denomp = NULL,
       rv   <- t(chol(fit.sum$cov.unscaled))
       beta <- beta + rv %*% rnorm(ncol(rv))  
     }
-    p    <- 1/(1 + exp(-(xp %*% beta)))  
-    vec  <- rbinom(nrow(p),denomp, p) 
-}
-  return(vec)
+    p <- 1/(1 + exp(-(xp %*% beta)))  
+    vec <- rbinom(nrow(p),denomp, p) 
+  }
+  return(list(res = vec, fit = "logreg"))
 }
 
 
 ###-----syn.polyreg--------------------------------------------------------   
     
-syn.polyreg <- function(y, x, xp, proper = FALSE, maxit = 100, 
+syn.polyreg <- function(y, x, xp, proper = FALSE, maxit = 1000, 
                         trace = FALSE, MaxNWts = 10000, ...)
 {
 # synthesis for categorical response variables by the Bayesian
@@ -387,7 +396,7 @@ syn.polyreg <- function(y, x, xp, proper = FALSE, maxit = 100,
 #
 # This algorithm uses the function multinom from the libraries nnet and MASS
 # (Venables and Ripley).
-
+  
   x   <- as.matrix(x)
   xp  <- as.matrix(xp)
   
@@ -405,27 +414,25 @@ syn.polyreg <- function(y, x, xp, proper = FALSE, maxit = 100,
   w   <- aug$w
   xfy <- cbind.data.frame(yf, xf)  
   fit <- multinom(formula(xfy), data = xfy, weights = w,
-                  maxit = maxit, trace = trace, MaxNWts = MaxNWts, ...)
-  #	xy <- cbind.data.frame(y=y, x=xp) #needed????               
+  maxit = maxit, trace = trace, MaxNWts = MaxNWts, ...)
+  if(fit$convergence == 1) cat(" <- Reached max number of iterations for a multinomial model suggest rerunning with polyreg.maxit increased (default 1000)\n")             
   post <- predict(fit, xp, type = "probs")   
   if (length(y)==1) post <- matrix(post, nrow=1, ncol=length(post)) 
   if (!is.factor(y)) y <- as.factor(y)
   nc <- length(levels(yf))                    
   un <- rep(runif(nrow(xp)),each=nc)
   if (is.vector(post)) post <- matrix(c(1-post,post),ncol=2)
-  draws <- un>apply(post,1,cumsum)
-  idx   <- 1+apply(draws,2,sum)
-  
-  # this slightly clumsy code needed to ensure y retains its labels and levels
-  # y[1:length(y)]<-(levels(y)[idx])          
-  
-  return(levels(yf)[idx])
+  draws <- un > apply(post,1,cumsum)
+  idx   <- 1 + apply(draws,2,sum)
+   
+  res <- levels(yf)[idx]
+  return(list(res = res, fit = "polyreg"))
 }
 
 
 ###-----syn.polr-----------------------------------------------------------
 
-syn.polr <- function(y, x, xp, proper = FALSE, maxit = 100,
+syn.polr <- function(y, x, xp, proper = FALSE, maxit = 1000,
                      trace = FALSE, MaxNWts = 10000, ...)
 {
   x   <- as.matrix(x)
@@ -452,6 +459,7 @@ syn.polr <- function(y, x, xp, proper = FALSE, maxit = 100,
     fit <- multinom(formula(xfy), data = xfy, weights = wf,
                     maxit = maxit, trace = trace, MaxNWts = MaxNWts, ...)
     cat("\tMethod changed to multinomial")
+    if(fit$convergence==1) cat("\nReached max number of iterations for a multinomial model\nRerun with polyreg.maxit increased (default 100)\n")
   }
   post  <- predict(fit, xp, type = "probs")
   if (length(y) == 1) post <- matrix(post, nrow = 1, ncol = length(post))
@@ -464,7 +472,9 @@ syn.polr <- function(y, x, xp, proper = FALSE, maxit = 100,
 # this slightly clumsy code needed to ensure y retains its labels and levels
 #  y[1:length(y)]<-(levels(y)[idx])
 
-  return(levels(yf)[idx])
+  res <- levels(yf)[idx]
+
+  return(list(res = res, fit = "polr"))
 }
 
 
@@ -480,17 +490,17 @@ syn.sample <- function(y, xp, smoothing, cont.na, proper = FALSE, ...)
   if (smoothing=="density") yp[!(yp %in% cont.na)] <- 
     syn.smooth(yp[!(yp %in% cont.na)],y[!(y %in% cont.na)])
   
-  return(yp)
+  return(list(res = yp, fit = "sample"))
 }
 
 
 ###-----syn.passive--------------------------------------------------------
-
 syn.passive <- function(data, func)
 {
-# Special elementary synthesis method for transformed data.
-
- return(model.frame(func, data))
+  # Special elementary synthesis method for transformed data.
+  res <- suppressWarnings(model.frame(as.formula(func), data, na.action=na.pass))	#BN 25/08 added suppressWarnings to avoid NAs by coersion for NAtemp
+ 
+  return(list(res = res, fit = "passive"))
 }
 
 
@@ -499,12 +509,19 @@ syn.passive <- function(data, func)
 syn.cart <- function(y, x, xp, smoothing, proper = FALSE, 
                      minbucket = 5, cp = 1e-04, ...)
 {
-  
   if (proper==TRUE){
     s <- sample(length(y), replace=TRUE)
     x <- x[s,,drop=FALSE]
     y <- y[s]
   }
+  
+  #for (j in 1:ncol(x)){
+  #  if(is.factor(x[,j])) { 
+  #    attributes(x[,j])$contrasts <- NULL
+  #    attributes(xp[,j])$contrasts <- NULL
+  #  }
+  #}
+  
   minbucket <- max(1, minbucket)  # safety
   if (!is.factor(y)) {
     fit <- rpart(y ~ ., data = as.data.frame(cbind(y, x)), method = "anova",
@@ -532,7 +549,8 @@ syn.cart <- function(y, x, xp, smoothing, proper = FALSE,
     new   <- apply(nodes, MARGIN=1, FUN=function(s) resample(colnames(nodes),size=1,prob=s))
     new   <- factor(new,levels=levels(y))                                        
   }
-  return(new)
+  
+  return(list(res = new, fit = fit))
 }
 
 
@@ -567,7 +585,8 @@ syn.ctree <- function(y, x, xp, smoothing, proper = FALSE, minbucket = 5, ... )
   }
   new <- y[newrowno]
   if (!is.factor(y) & smoothing=="density") new <- syn.smooth(new,y)
-  return(new)
+  
+  return(list(res = new, fit = datact))
 }
 
 
@@ -601,7 +620,8 @@ syn.survctree <- function(y, yevent, x, xp, proper = FALSE, minbucket = 5, ...)
   #Predicte node & sample time+event
   faketime  <- y[newrowno]
   fakeevent <- yevent[newrowno]
-  return(list(syn.time=faketime,syn.event=fakeevent))
+
+  return(list(syn.time = faketime, syn.event = fakeevent, fit = datact))
 }
 
 
@@ -644,8 +664,9 @@ syn.rf <- function(y, x, xp, smoothing, proper = FALSE, ntree = 10, ...)
   if (is.factor(y)) yhat <- factor(yhat, levels = obslevels) 
   if (!is.factor(y) & smoothing=="density") yhat <- syn.smooth(yhat,y)
     
-  return(yhat)
+  return(list(res = yhat, fit = rf.fit))  # "rf"
 }
+
 
 ###-----syn.bag-------------------------------------------------------------
 # bagging when mtry = ncol(x) - using all predictors
@@ -686,7 +707,7 @@ syn.bag <- function(y, x, xp, smoothing, proper = FALSE, ntree = 10, ...)
   if (is.factor(y)) yhat <- factor(yhat, levels = obslevels) 
   if (!is.factor(y) & smoothing=="density") yhat <- syn.smooth(yhat,y)
     
-  return(yhat)
+  return(list(res = yhat, fit = rf.fit))    # "bag"
 }
 
 
@@ -724,9 +745,61 @@ syn.cartbboot <- function(y, x, xp, proper = FALSE,
     new        <- sapply(1:length(donor),function(s) resample(donor[[s]],1,p=donor.p[[s]]))
     new        <- factor(new,levels=levels(y))
   }
-  return(new)
+
+  return(list(res = new, fit = fit))
 }
 
+
+###-----syn.nested---------------------------------------------------------
+# function for allocating to subcategories (random sampling within groups)
+
+syn.nested <- function (y, x, xp, ...)
+{
+  xr   <- apply(x, 1, function(x) paste(x,collapse="-"))
+  xpr  <- apply(xp, 1, function(x) paste(x,collapse="-"))
+  uxpr <- sort(unique(xpr))
+  
+  index  <- 1:length(y)
+  indexp <- rep(0, nrow(xp))
+  for (i in uxpr) {
+    indexp[xpr == i] <- sample(index[xr == i], sum(xpr == i), TRUE)
+  }
+  yp <- y[indexp]
+ 
+  return(list(res = yp, fit = "nested"))
+}
+
+
+###-----syn.constant-------------------------------------------------------
+
+syn.constant <- function(y, xp, ...) 
+{
+  yp <- y
+  length(yp) <- xp
+  if (xp > length(y)){
+    yp[(length(y) + 1):xp] <- names(which.max(table(y, exclude = NULL)))  # in case y is 'almost' constant 
+    if (is.numeric(y)) yp <- as.numeric(yp)
+    else if (is.logical(y)) yp <- as.logical(yp)
+  }
+  return(list(res = yp, fit = "constant"))
+}
+
+
+###-----syn.collinear------------------------------------------------------
+
+syn.collinear <- function (y, x, xp, ...)
+{
+  x <- x[,1]                               #!BN to check
+  xp <- xp[,1]                             #!BN to check
+  indexp  <- match(xp,x)
+  yp <- y[indexp]
+  return(list(res = yp, fit = "collinear"))
+}
+
+
+
+# O T H E R   A U X I L I A R Y   F U N C T I O N S  
+#|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||| 
 
 ###-----is.passive---------------------------------------------------------
 is.passive <- function(string) return("~"==substring(string,1,1))

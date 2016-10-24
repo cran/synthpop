@@ -61,9 +61,12 @@ synthesis (for details see Raab et al. (submitted 2014)).}
 }
 
 \references{
-Raab, G.M., Nowok, B. and Dibben, C. (submitted 2014). 
-A simplified approach to synthetic data. 
-\url{http://arxiv.org/abs/1409.0217}
+  Nowok, B., Raab, G.M and Dibben, C. (2016). synthpop: Bespoke
+  Creation of Synthetic Data in R. \emph{Journal of Statistical Software},
+  \bold{74}(11), 1-26. doi:10.18637/jss.v074.i11
+
+  Raab, G.M., Nowok, B. and Dibben, C. (submitted 2014). 
+  A simplified approach to synthetic data. \url{http://arxiv.org/abs/1409.0217}
 }
 \seealso{
 \code{\link{summary}},\code{\link{print}}
@@ -78,7 +81,7 @@ summary(f1)
 summary(f1, population.inference = TRUE)
   
 ### proper synthesis
-s2 <- syn(ods, m = 5, proper = TRUE)
+s2 <- syn(ods, m = 5, method = "parametric", proper = TRUE)
 f2 <- glm.synds(smoke ~ sex + age + edu + ls, data = s2, family = "binomial")
 summary(f2)
 summary(f2, population.inference = TRUE)
