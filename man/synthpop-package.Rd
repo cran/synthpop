@@ -9,8 +9,8 @@ Generate synthetic versions of a data set using parametric or CART methods.}
 \tabular{ll}{
 Package: \tab synthpop\cr
 Type: \tab Package\cr
-Version: \tab 1.3-0\cr
-Date: \tab 2016-10-24\cr
+Version: \tab 1.3-1\cr
+Date: \tab 2016-11-23\cr
 License: \tab GPL-2 | GPL-3\cr
 }
 Synthetic data are generated from the original (observed) data by the function 
@@ -24,5 +24,10 @@ Beata Nowok, Gillian M Raab, Joshua Snoke and Chris Dibben based on package \pkg
 (2.18) by Stef van Buuren and Karin Groothuis-Oudshoorn
 
 Maintainer: Beata Nowok <beata.nowok@gmail.com>
+}
+\references{
+  Nowok, B., Raab, G.M and Dibben, C. (2016). synthpop: Bespoke
+  Creation of Synthetic Data in R. \emph{Journal of Statistical Software},
+  \bold{74}(11), 1-26. \doi{10.18637/jss.v074.i11}.
 }
 \keyword{package}

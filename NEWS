@@ -1,3 +1,15 @@
+synthpop 1.3-1
+---------------
+
+CHANGES
+* Update of the vignette.
+
+BUG FIXES
+* compare.synds() for variables with NA values in observed but not in 
+  synthetic data returns correct value (0) for NA category in synthetic data.
+* Invalid `times` argument corrected (lists of numbers coerced to numbers).
+
+
 synthpop 1.3-0
 ---------------
 

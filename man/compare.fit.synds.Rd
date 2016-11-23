@@ -88,7 +88,7 @@ not differ from the estimates from the observed data (\code{Beta} and
 
   Nowok, B., Raab, G.M and Dibben, C. (2016). synthpop: Bespoke
   Creation of Synthetic Data in R. \emph{Journal of Statistical Software},
-  \bold{74}(11), 1-26. doi:10.18637/jss.v074.i11
+  \bold{74}(11), 1-26. \doi{10.18637/jss.v074.i11}.
 }
 
 \seealso{
