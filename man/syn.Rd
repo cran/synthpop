@@ -241,8 +241,8 @@ syn.strata(data, strata = NULL,
      conducted.}
   \item{n}{a number of cases in the original data.}  
   \item{k}{a number of cases in the synthesised data.}
-  \item{rules}{a list of rules for restricted values applied to 
-     the synthetic data.}
+  \item{rules}{a list of rules for restricted values applied to the synthetic 
+    data.}
   \item{rvalues}{a list of the values corresponding to the rules
      specified by \code{rules}.}
   \item{cont.na}{a list of codes for missing values for continuous variables.}
@@ -266,7 +266,7 @@ syn.strata(data, strata = NULL,
 
 \references{
   Nowok, B., Raab, G.M and Dibben, C. (2016). synthpop: Bespoke
-  Creation of Synthetic Data in R. \emph{Journal of Statistical Software},
+  creation of synthetic data in R. \emph{Journal of Statistical Software},
   \bold{74}(11), 1-26. \doi{10.18637/jss.v074.i11}.
 }
 

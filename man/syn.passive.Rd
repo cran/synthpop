@@ -17,7 +17,7 @@
   }
 \value{A vector including the result of applying the \code{formula}.}
 \references{
-  Van Buuren, S., Groothuis-Oudshoorn, K. (2011).
+  Van Buuren, S. and Groothuis-Oudshoorn, K. (2011).
   \code{mice}: Multivariate Imputation by Chained Equations
   in \code{R}. \emph{Journal of Statistical Software},
   \bold{45}(3), 1-67.

@@ -14,11 +14,11 @@
 }
 \usage{
 \method{compare}{fit.synds}(object, data, plot = "Z", 
-  return.result = TRUE, return.plot = TRUE, plot.intercept = FALSE, 
+  print.coef = FALSE, return.plot = TRUE, plot.intercept = FALSE, 
   lwd = 1, lty = 1, lcol = c("#1A3C5A","#4187BF"), 
   dodge.height = .5, point.size = 2.5, partly = FALSE, ...)
 
-\method{print}{compare.fit.synds}(x, \dots)
+\method{print}{compare.fit.synds}(x, print.coef = x$print.coef, \dots)
 }
 \arguments{
   \item{object}{an object of type \code{fit.synds} created by fitting a model to 
@@ -27,12 +27,12 @@
   \item{data}{an original observed data set.}
   \item{plot}{values to be plotted: \code{"Z"} (Z scores) or \code{"coef"}
   (coefficients).}
-  \item{return.result}{a logical value indicating whether a table of estimates 
-   should be returned.}
+  \item{print.coef}{a logical value determining whether tables of 
+   estimates for the original and synthetic data should be printed.}
   \item{return.plot}{a logical value indicating whether a confidence interval
    plot should be returned.}   
   \item{plot.intercept}{a logical value indicating whether estimates for 
-   intercept should be plotted.}
+   intercept should be plotted.}  
   \item{lwd}{the line type.}  
   \item{lty}{the line width.}
   \item{lcol}{line colours.}
@@ -73,12 +73,27 @@ not differ from the estimates from the observed data (\code{Beta} and
  \item{ci.overlap}{a data frame containing the percentage of overlap between 
    the estimated synthetic confidence intervals and the original sample 
    confidence intervals for each parameter, calculated as suggested by 
-   Karr et al. (2006).} 
-  \item{ci.plot}{\code{ggplot} of the the coefficients with confidence 
-   intervals for models based on observed and synthetic data.}
- If \code{return.result} was set to \code{FALSE} then \code{coef.obs},
- \code{coef.obs}, \code{coef.diff} and \code{ci.overlap} are all \code{NULL}. 
- If \code{return.plot} was set to \code{FALSE}, \code{ci.plot} is \code{NULL}.
+   Karr et al. (2006).}
+ \item{lack.of.fit}{a summary measure of lack-of-fit calculated from the 
+   differences between the coefficients and which will have a chi-squared 
+   distribution with degrees of freedom equal to the number of parameters 
+   in the model when the synthesising model is correct.} 
+ \item{mean.ci.overlap}{Mean confidence interval overlap (over all 
+   coefficients).}  
+ \item{mean.abs.std.diff}{Mean absolut standardized difference (over all 
+   coefficients).}  
+ \item{mean.lof}{Mean lack-of-fit (over \code{m} syntheses).}  
+ \item{mean.lof.exp}{Mean lack-of-fit ratio to expected.}  
+ \item{std.lof}{Standardised lack-of-fit.}      
+ \item{ci.plot}{\code{ggplot} of the the coefficients with confidence 
+   intervals for models based on observed and synthetic data. 
+   If \code{return.plot} was set to \code{FALSE} then \code{ci.plot} 
+   is \code{NULL}.}
+ \item{print.coef}{a logical value determining whether tables of 
+   estimates for the original and synthetic data should be printed.}  
+ \item{m}{the number of synthetic versions of the original (observed) data.} 
+ \item{ncoef}{the number of coefficients in the fitted model (including an 
+   intercept).} 
 } 
 
 \references{
@@ -87,7 +102,7 @@ not differ from the estimates from the observed data (\code{Beta} and
   confidentiality. \emph{The American Statistician}, \bold{60}(3), 224-232.
 
   Nowok, B., Raab, G.M and Dibben, C. (2016). synthpop: Bespoke
-  Creation of Synthetic Data in R. \emph{Journal of Statistical Software},
+  creation of synthetic data in R. \emph{Journal of Statistical Software},
   \bold{74}(11), 1-26. \doi{10.18637/jss.v074.i11}.
 }
 
@@ -97,8 +112,8 @@ not differ from the estimates from the observed data (\code{Beta} and
 
 \examples{
 ods <- SD2011[,c("sex","age","edu","smoke")]
-s1 <- syn(ods, m = 5)
+s1 <- syn(ods, m = 3)
 f1 <- glm.synds(smoke ~ sex + age + edu, data = s1, family = "binomial")
 compare(f1, ods) 
-compare(f1, ods, plot = "coef")
+compare(f1, ods, print.coef = TRUE, plot = "coef")
 }

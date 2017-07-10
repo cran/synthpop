@@ -53,8 +53,8 @@ syn.cart(y, x, xp, smoothing, proper = FALSE, minbucket = 5, cp = 1e-04, ...)
 }
 \value{A vector of length \code{k} with synthetic values of \code{y}.}
 \references{
-  Reiter, J.P. (2005). Using CART to Generate Partially Synthetic, 
-  Public Use Microdata. \emph{Journal of Official Statistics}, 
+  Reiter, J.P. (2005). Using CART to generate partially synthetic, 
+  public use microdata. \emph{Journal of Official Statistics}, 
   \bold{21}(3), 441--462.
   
   Drechsler, J. and Reiter, J.P. (2011). An empirical evaluation of easily 

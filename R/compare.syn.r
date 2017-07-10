@@ -252,21 +252,21 @@ ggnum <- function(data, name = "observed", na = as.list(rep(NA,ncol(data))),
   ## counts for missing values  
     dataNA <- data[(data[,i] %in% na[[i]]),i] 
     
-    if (identical(dataNA, numeric(0))) {
-      if (anyna[i]==TRUE) {
+    if (length(dataNA) == 0) {
+      if (anyna[i] == TRUE) {
         NAcounts <- 0   
         names(NAcounts) <- NA 
       } else {
         NAcounts <- NULL
       }
     } else {
-      if (anyna[i]==TRUE) {
+      if (anyna[i] == TRUE) {
         NAcounts <- table(dataNA, useNA = "always")
       } else {
         NAcounts <- table(dataNA)  
       }
     } 
-    if (!is.null(NAcounts)) names(NAcounts) <- paste("miss", names(NAcounts),sep=".") 
+    if (!is.null(NAcounts)) names(NAcounts) <- paste("miss", names(NAcounts), sep=".") 
     counts <- c(counts, NAcounts)
     perlist[[i]] <- counts*100/length(data[,i])
   }
@@ -294,7 +294,7 @@ dfNA <- function(data, na){
 
 ###-----compare.fit.synds--------------------------------------------------
 compare.fit.synds <- function(object, data, plot = "Z",
-  return.result = TRUE, return.plot = TRUE, plot.intercept = FALSE,
+  print.coef = FALSE, return.plot = TRUE, plot.intercept = FALSE, 
   lwd = 1, lty = 1, lcol = c("#1A3C5A","#4187BF"),
   dodge.height = .5, point.size = 2.5, partly = FALSE, ...) {   # c("#132B43", "#56B1F7")
 
@@ -320,7 +320,15 @@ compare.fit.synds <- function(object, data, plot = "Z",
                      args=list(formula=formula(object),
                      family=object$call$family,data=call$data)))
  }
-
+ 
+ real.varcov <- real.fit$cov.unscaled                     #! GR-16/12/16 begin
+ real.coef   <- real.fit$coefficients[,1] 
+ lack.of.fit <- rep(NA,object$m)
+ for (i in 1:summary(object)$m) {
+   diff <- real.coef - summary(object)$analyses[[i]]$coefficients[,1]
+   lack.of.fit[i] <- t(diff) %*% solve(real.varcov) %*% (diff)
+ }                                                        #! GR-16/12/16 end 
+ 
  if (return.plot == TRUE){
    yvar <- as.character(formula(object)[[2]])
 
@@ -348,14 +356,14 @@ compare.fit.synds <- function(object, data, plot = "Z",
      color = "Model", linetype = "Model"), data = modelCI, width = 0, 
      lwd = lwd, lty = lty, position = position_dodge(width = dodge.height))
 
-   point.geom <- geom_point(aes_string(ymin = value, ymax = value,
+   point.geom <- geom_point(aes_string(#ymin = value, ymax = value,  #BN-03/02/2017 commented
      color = "Model", shape = "Model"), data = modelCI, 
      size = point.size, position = position_dodge(width = dodge.height))
 
-   p <- ggplot(data=modelCI, aes_string(x = coefficient, y = value))
+   p <- ggplot(data = modelCI, aes_string(x = coefficient, y = value))
    p <- p + geom_hline(yintercept = 0, colour = "grey", linetype = 2, lwd = 1)
    p <- p + CI.geom + point.geom + labs(title = title, y = xlab)
-   p <- p + scale_shape_manual(values=c(16:17), breaks = c("synthetic","observed")) +
+   p <- p + scale_shape_manual(values = c(16:17), breaks = c("synthetic","observed")) +
             scale_colour_manual(values = lcol, breaks = c("synthetic","observed"))
    p <- p + coord_flip()
    #p <- p + theme_bw()
@@ -364,18 +372,28 @@ compare.fit.synds <- function(object, data, plot = "Z",
    p
  } else p <- NULL
 
- if (return.result == TRUE){
-   res.obs <- real.fit$coefficients[,-4]
-   colnames(res.obs) <- c("Beta","se(Beta)","Z")
-   res.syn <- syn.fit$coefficients[,c("B.syn","se(Beta).syn","se(B.syn)","Z.syn","se(Z.syn)")]
-   res.syn <- res.syn[order(match(rownames(res.syn), rownames(res.obs))), ]
-   res.overlap <- compare.CI(res.syn, res.obs, plot.intercept)
-   res.diff <- compute.diff(res.syn, res.obs, plot.intercept)
- } else res.obs <- res.syn <- res.overlap <- res.diff <- NULL
+  # detailed results
+  res.obs <- real.fit$coefficients[,-4]
+  colnames(res.obs) <- c("Beta","se(Beta)","Z")
+  res.syn <- syn.fit$coefficients[,c("B.syn","se(Beta).syn","se(B.syn)","Z.syn","se(Z.syn)")]
+  res.syn <- res.syn[order(match(rownames(res.syn), rownames(res.obs))), ]
+  res.overlap <- compare.CI(res.syn, res.obs, intercept = TRUE)
+  res.diff    <- compute.diff(res.syn, res.obs, intercept = TRUE)
 
- res <- list(call = object$call, coef.obs = res.obs,
-   coef.syn = res.syn, coef.diff = res.diff, 
-   ci.overlap = res.overlap, ci.plot = p)
+  # calculate summary measures
+  ncoef <- nrow(res.obs) 
+  mean.ci.overlap   <-  mean(res.overlap[,1])
+  mean.abs.std.diff <-  mean(abs(res.diff[,1]))
+  mean.lof          <-  mean(lack.of.fit)
+  mean.lof.exp      <-  mean(lack.of.fit)/ncoef
+  std.lof           <- (mean(lack.of.fit) - ncoef)/sqrt(2*ncoef)
+
+ res <- list(call = object$call, coef.obs = res.obs, coef.syn = res.syn, 
+   coef.diff = res.diff, ci.overlap = res.overlap, lack.of.fit = lack.of.fit,
+   mean.ci.overlap =  mean.ci.overlap, mean.abs.std.diff = mean.abs.std.diff,
+   mean.lof = mean.lof, mean.lof.exp = mean.lof.exp, std.lof = std.lof,      
+   ci.plot = p, print.coef = print.coef, m = object$m, ncoef = ncoef)  
+
  class(res) <- "compare.fit.synds"
  return(res)
 }
@@ -429,15 +447,15 @@ compare.CI <- function(synthetic, observed, intercept, ...){
  obs.lower <- observed[i, 1] - (1.96 * observed[i, 2])
 	  
 ## CI overlap
- overlap.lower <- max(obs.lower, syn.lower)
- overlap.upper <- min(obs.upper, syn.upper)
-   if(overlap.lower >= overlap.upper){
-	   CIoverlap[i, 1] <- 0
-	 } else {
+ overlap.lower <- max(obs.lower, syn.lower)       
+ overlap.upper <- min(obs.upper, syn.upper)       
+#   if(overlap.lower >= overlap.upper){            #! BN-06/01/17 to comment out ??
+#	   CIoverlap[i, 1] <- 0                         #! BN-06/01/17 to comment out ??
+#	 } else {                                       #! BN-06/01/17 to comment out ??
 	   CIoverlap[i, 1] <- 0.5 * 
        (((overlap.upper - overlap.lower) / (obs.upper - obs.lower)) + 
 		    ((overlap.upper - overlap.lower) / (syn.upper - syn.lower)))
-	 }
+#	 }                                              #! BN-06/01/17 to comment out ??
 ##Coef coverage
 #coverage[i, 1] = (observed[i, 1] <= syn.upper & observed[i, 1] >= syn.lower)
 ##Z coverage

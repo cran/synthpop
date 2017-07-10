@@ -312,17 +312,30 @@ print.summary.fit.synds <- function(x, ...) {
 
 ###-----print.compare.fit.synds--------------------------------------------
 
-print.compare.fit.synds <- function(x, ...){
+print.compare.fit.synds <- function(x, print.coef = x$print.coef, ...){
+
   cat("\nCall used to fit models to the data:\n")
   print(x$call)
-  if (!is.null(x$coef.obs)){
+  if (print.coef == TRUE){
     cat("\nEstimates for the observed data set:\n")
     print(x$coef.obs)
     cat("\nCombined estimates for the synthetised data set(s):\n")
     print(x$coef.syn[,c("B.syn","se(Beta).syn","se(B.syn)","Z.syn")])
-    cat("\nDifferences synthetic vs. observed:\n")
+  }  
+    
+  cat("\nDifferences between results based on synthetic and observed data:\n")
     print(cbind.data.frame(x$coef.diff,x$ci.overlap))                                 
-  }
+  if (x$m==1) {
+    cat("\nMeasures for one synthesis and ", x$ncoef, " coefficients", sep="") 
+  } else {
+    cat("\nMeasures for ", x$m, " syntheses and ", x$ncoef, " coefficients", sep="") 
+  }   
+  cat("\nMean confidence interval overlap: ", x$mean.ci.overlap)
+  cat("\nMean absolute std. coef diff: ", x$mean.abs.std.diff)
+  cat("\nMean lack-of-fit: ", x$mean.lof )
+  cat("\nMean lack-of-fit ratio to expected: ", x$mean.lof.exp)
+  cat("\nStandardised lack-of-fit: ", x$std.lof ,"\n")
+
   if (!is.null(x$ci.plot)){
     cat("\nConfidence interval plot:\n")
     print(x$ci.plot)
@@ -352,73 +365,155 @@ print.compare.synds <- function(x, ...) {
 }
 
 
-###-----print.utility.synds------------------------------------------------
+###-----print.utility.gen------------------------------------------------
 
-print.utility.synds <- function(x, ...){
-  
-	cat("\nMethod:\n($method)\n")
-	cat(x$method,"\n")
-	
-	cat("\nMean and SD of propensity score utility value: \n($utility.summary)\n")
-	print(x$utility.summary)
-	
-#	cat("\nPropensity score utility values for each synthetic set \n(first few if numerous): \n($utility.raw)\n")
-#	print(head(x$utility.raw))
-
-  if(!is.null(x$deviance.summary)){
-    cat("\nMean and SD of propensity deviance statistics: \n($deviance.summary)\n")
-    print(x$deviance.summary)
-
-#    cat("\nPropensity deviance statistics for each synthetic set \n(first few if numerous): \n($deviance.raw)\n")
-#    print(head(x$deviance.raw))
+print.utility.gen <- function(x,print.zscores =x$print.zscores,digits= x$digits,
+  usethresh = x$usethresh,zthresh=x$zthresh, print.variable.importance=x$print.variable.importance, ...){
+  #
+	cat("\nUtility score calculated by method: ",x$method,"\n")
+  cat("\nCall was: ","\n")
+  print(x$call)
+	  if (x$method=="cart") cat("\nNull utility sumulated from a permutation test with ",x$nperm,"replications\n")
+  if (x$m>1) {
+	mnU<-mean(x$utilVal); mnE<-mean(x$utilExp); mnR<-mean(x$utilR); mnS<-mean(x$utilStd)
+      cat("\nMean utility score from ",x$m," syntheses \nUtility ",round(mnU,x$digits)," Expected value",round(mnE,x$digits),
+      " Ratio to expected ",round(mnR,x$digits)," Standardised ",round(mnS,x$digits),"\n")
+      if (x$m<11) {
+        cat("\nIndividual utility score results from ",x$m,"syntheses\n\n")
+        tabres<-rbind(round(x$utilVal,x$digits),round(x$utilExp,x$digits),round(x$utilR,x$digits), round(x$utilStd,x$digits))
+        dimnames(tabres)<-list(c("Utility","Expected","Ratio","Standardised"),paste("syn",1:length(x$utilVal)))
+        print(tabres)
+      }
   }
-	
-	if(!is.null(x$nullstats.summary)){
-    cat("\nNull distribution statistics: \n($nullstats.summary)\n")
-    print(x$nullstats.summary)
-	}
-	
+  else {
+     cat("\nUtility score results\nUtility ",round(x$utilVal,x$digits)," Expected value",round(x$utilExp,x$digits),
+      " Ratio to expected ",round(x$utilR,x$digits)," Standardised ",round(x$utilStd,x$digits),"\n")}
+  if (x$print.zscores==TRUE) {
+    if(x$method=="cart") cat("\nZscores not available for CART models\n")
+    else {
+      if (x$m==1) {
+        zscores=summary(x$fit)$coefficients[,3]
+        if (x$usethresh==TRUE) { 
+          cat("\nShowing Zscores greater than the threshold of +/- ",x$zthresh,"\n")
+          zscores<-zscores[abs(zscores)>x$zthresh]
+          if (length(zscores)==0) cat("No z scores above threshold of ",x$zthresh,"\n")
+          else print(zscores)
+        }
+        else print(zscores)
+      }
+      else{
+        if (x$usethresh==TRUE) { 
+          cat("\nShowing Zscores greater than the threshold of +/- ",x$zthresh,"\n")
+          for (i in 1:x$m){
+            zscores=summary(x$fit[[i]])$coefficients[,3]
+            cat("Synthesis ",i,"\n")
+            zscores<-zscores[abs(zscores)>x$zthresh]
+            if (length(zscores)==0) cat("No z scores above threshold of ",x$zthresh,"\n")
+            else print(zscores)
+          }
+        }
+        else  { 
+          for (i in 1:x$m){
+            zscores=summary(x$fit[[i]])$coefficients[,3]
+            cat("Synthesis ",i,"\n")
+            print(zscores)
+          }
+        }
+      }
+    }
+  }
+  
+ if (x$print.variable.importance==TRUE) {
+  if(x$method!="cart" & x$tree.method=="rpart") cat("Variable importance only available for CART models using function rpart\n")
+  else {
+  cat("\nRelative importance of each variable scaled to add to 100\n" )
+    if (x$m==1) {
+      variable.importance<-x$fit$variable.importance
+      variable.importance<-round(variable.importance/sum(variable.importance)*100,x$digits)
+      print(variable.importance)
+    }
+    else{
+       for (i in 1:x$m){
+       cat("Synthesis ",i,"\n")
+         variable.importance<-x$fit[[i]]$variable.importance
+         variable.importance<-round(variable.importance/sum(variable.importance)*100,x$digits)
+         print(variable.importance)
+    }
+  }
+ }
+}
 	invisible(x)
+	
 }
 
 
-###-----print.tab.utility--------------------------------------------------
+###-----print.utility.tab--------------------------------------------------
 
-print.tab.utility <- function(x,tables = FALSE, digits = 2, ...){
-  cat("Total number of cells in table: ", x$df[1] + x$nempty[1] + 1,"\n")
-	cat("Number of non-empty cells in table: ", x$df + 1,"\n")
-  cat("\nChi-squared:\n($Chisq)\n")
-	cat(x$Chisq,"\n")
-	cat("\nNominal degrees of freedom: \n($df)\n")
-	cat(x$df,"\n")
-	cat("\nRatio:\n($ratio)\n")
-  cat(x$ratio,"\n")
-  # cat("\np-value:\n($pval)\n")
-  # cat(x$pval,"\n")
-  
-  if(tables==TRUE) {
+print.utility.tab <- function(x, print.tables = x$print.tables,  
+  print.zdiff = x$print.zdiff, digits = x$digits,...){
+
+  if(print.tables == TRUE) {
     cat("\nObserved \n($tab.obs)\n")
 	  print(x$tab.obs)
-    cat("\nSynthesised \n($tab.syn)\n")
-	  print(x$tab.syn)
-    cat("\nZ score for differences: \n($tab.Zdiff)\n")
-	  if (length(x$pval) == 1){
-      print(round(x$tab.Zdiff, digits))
-	  } else {
-		  print(lapply(x$tab.Zdiff, round, digits))
-      
-      meantab <- x$tab.Zdiff[[1]]
-		  for (i in 2:(length(x$tab.Zdiff))) {
-			  meantab <- (i-1)/i*meantab + x$tab.Zdiff[[i]]/i
-		  }
-		  meantab <- meantab*sqrt(length(x$tab.Zdiff))
-      cat("\nZ score for combined tables:\n")
-		  print(round(meantab, digits))
-	  }
+    if (x$m==1) {
+      cat("\nSynthesised \n($tab.syn)\n")
+	    print(x$tab.syn) 
+    } else {
+      meantab <- apply(simplify2array(x$tab.syn), c(1,2), mean)
+      cat("\nMean of ",x$m," synthetic tables:\n", sep="")
+      print(round(meantab, digits))
+    }
   }
+  
+  if(print.zdiff == TRUE) {
+    cat("\nTable of Z scores for differences \n($tab.zdiff)\n")
+    if (x$m==1) {
+      print(round(x$tab.zdiff, digits)) 
+    } else {
+      meanzdiff <- apply(simplify2array(x$tab.zdiff), c(1,2), mean)
+      cat("\nMean of ",x$m," Z score tables:\n", sep="")
+      print(round(as.table(meanzdiff), digits))
+    }
+  }
+  
+  if (x$m==1){
+    cat("\nNumber of cells in each table: ", 
+        x$df[1] + x$nempty[1] + 1,
+        "; Number of cells contributing to utility measures: ", 
+        x$df + 1,"\n", sep="")
+    cat("\nUtility score results\n")
+    cat("Freeman Tukey (FT): ", round(x$UtabFT,digits), ";",
+        " Ratio to expected: ", round(x$ratioFT,digits), ";",
+        " Standardised: ", round(x$stdFT,digits), "\n", sep="")
+    cat("Voas Williamson (VW): ", round(x$UtabVW,digits), ";",
+        " Ratio to expected: ", round(x$ratioVW,digits), ";",
+        " Standardised: ", round(x$stdVW,digits), "\n", sep="")
+  } else if (x$m>1){
+    cat("\nAverage results for ", x$m, " syntheses\n", sep="")
+    cat("\nNumber of cells in each table: ", 
+        round(mean(x$df[1] + x$nempty[1] + 1),digits),
+        "; Number of cells contributing to utility measures: ", 
+        round(mean(x$df + 1),digits),"\n", sep="")
+    cat("\nUtility score results\n")
+    cat("Freeman Tukey (FT): ", round(mean(x$UtabFT),digits), ";",
+        " Ratio to expected: ", round(mean(x$ratioFT),digits), ";",
+        " Standardised: ", round(mean(x$stdFT),digits), "\n", sep="")
+    cat("Voas Williamson (VW): ", round(mean(x$UtabVW), digits), ";",
+        " Ratio to expected: ",  round(mean(x$ratioVW), digits), ";",
+        " Standardised: ", round(mean(x$stdVW),digits), "\n", sep="")
+    cat("\nResults from individual syntheses\n")
+    
+    tab.res <- cbind.data.frame(1:x$m, x$df,
+      round(x$UtabFT,digits),round(x$ratioFT,digits),round(x$stdFT,digits),
+      round(x$UtabVW,digits),round(x$ratioVW,digits),round(x$stdVW,digits))
+    colnames(tab.res) <- c("Synthesis","Expected",
+                           "FT Utility","FT Ratio","FT Std.",
+                           "VW Utility","VW Ratio","VW Std.")
+    print(tab.res)
+  }
+
  	invisible(x)
 }
-  
 
 
 ###-----summary.out--------------------------------------------------------
