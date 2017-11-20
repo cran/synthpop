@@ -256,12 +256,12 @@ utility.tab <- function(object, data, vars = NULL, ngroups = 5,
   if (m==1) syndata <- list(object$syn) else syndata <- object$syn   
   syndata <- lapply(syndata,'[',vars)
   
-  if (nrow(data) != nrow(syndata[[1]])) 
-    stop("\nThis function is not for case when sizes of original and synthetic data differ.\n", call.=FALSE)
+  #if (nrow(data) != nrow(syndata[[1]])) 
+  #  stop("\nThis function is not for case when sizes of original and synthetic data differ.\n", call.=FALSE)
 
-  df <- ratioFT <- ratioVW <- stdVW <- stdFT <- 
+  df <- ratioFT <- ratioVW <- pvalVW <- pvalFT <- 
     UtabFT <- UtabVW <- nempty <- vector("numeric", m)
-  tab.syn <- tab.zdiff <- vector("list", m) 
+  tab.syn <- tab.zdiff <- tabd <- vector("list", m) 
   
   # nobs.missings <- sum(apply(is.na(data),1,sum)>0) 
   # nsyn.missings <- vector("numeric", m)
@@ -274,7 +274,7 @@ utility.tab <- function(object, data, vars = NULL, ngroups = 5,
       if (is.numeric(data[,j])){
         grpd <- group_num(data[,j], syndata[[i]][,j], 
           n = ngroups, cont.na = my_cont.na[[j]], ...)
-        data[,j] <- grpd[,1]; syndata[[i]][,j] <- grpd[,2]
+        data[,j] <- grpd[[1]]; syndata[[i]][,j] <- grpd[[2]]
       } else if (is.character(data[,j])) {
         data[,j] <- factor(data[,j])
         syndata[[i]][,j] <- factor(syndata[[i]][,j], 
@@ -287,21 +287,25 @@ utility.tab <- function(object, data, vars = NULL, ngroups = 5,
       }
     }
     
-    tabd            <- table(data)
-    totcells        <- length(tabd)
+    # * Adjustment for synthetic data that have different size than original data
+    tabd[[i]]       <- table(data) * nrow(syndata[[i]])/nrow(data)
+    
+    totcells        <- length(tabd[[i]])
     tab.syn[[i]]    <- table(syndata[[i]])
-    nempty[i]       <- sum(tabd + tab.syn[[i]] == 0)  
+    nempty[i]       <- sum(tabd[[i]] + tab.syn[[i]] == 0)  
     df[i]           <- totcells - nempty[i] - 1
-    diff            <-(tab.syn[[i]] - tabd)
-    expect          <-(tab.syn[[i]] + tabd)/2
-    UtabFT[i]       <- 4*sum((tab.syn[[i]]^(0.5) - tabd^(0.5))^2)
+    diff            <-(tab.syn[[i]] - tabd[[i]])
+    expect          <-(tab.syn[[i]] + tabd[[i]])/2
+    UtabFT[i]       <- 4*sum((tab.syn[[i]]^(0.5) - tabd[[i]]^(0.5))^2)
     tabsq           <- diff^2/expect
     tabsq[expect==0]<- 0
     UtabVW[i]       <- sum(tabsq)
     ratioFT[i]      <- UtabFT[i] / df[i]
-    stdFT[i]        <-(UtabFT[i] - df[i]) / sqrt(2*df[i])
+    pvalFT[i]       <- 1 - pchisq(UtabFT[i], df[i])
+    # stdFT[i] <-(UtabFT[i] - df[i]) / sqrt(2*df[i])
     ratioVW[i]      <- UtabVW[i] / df[i]
-    stdVW[i]        <-(UtabVW[i] - df[i]) / sqrt(2*df[i])
+    pvalVW[i]       <- 1 - pchisq(UtabVW[i], df[i])
+    # stdVW[i] <-(UtabVW[i] - df[i]) / sqrt(2*df[i])
     tab.zdiff[[i]]  <- diff/sqrt(expect)
 
   }
@@ -309,25 +313,30 @@ utility.tab <- function(object, data, vars = NULL, ngroups = 5,
   if (m==1) {
     tab.syn   <- tab.syn[[1]]
     tab.zdiff <- tab.zdiff[[1]]
+    tabd      <- tabd[[1]]  
   } 
   
+  # If all frequency tables for original data are the same, keep only one 
+  if (m > 1 && (all(sapply(object$syn, nrow) == sum(object$n)) || all(sapply(object$syn, nrow) == object$n))) tabd <- tabd[[1]]
+
   res <- list(m = m, 
               UtabFT  = UtabFT, 
               UtabVW  = UtabVW, 
               df      = df, 
               ratioFT = ratioFT, 
-              stdFT   = stdFT,
+              pvalFT  = pvalFT,
               ratioVW = ratioVW, 
-              stdVW   = stdVW,
+              pvalVW  = pvalVW,
               nempty  = unlist(nempty), 
               # nobs.missings = nobs.missings,
               # nsyn.missings = nsyn.missings,
               tab.obs = tabd, 
               tab.syn = tab.syn, 
               tab.zdiff = tab.zdiff,
-              digits  = digits, 
+              digits    = digits, 
               print.zdiff  = print.zdiff, 
-              print.tables = print.tables)
+              print.tables = print.tables, 
+              n = object$n)
   
   class(res) <- "utility.tab"
   return(res)
@@ -359,7 +368,7 @@ group_num <- function(x1, x2, n = 5, cont.na = NA, ...) {
     dig.lab = 8, right = FALSE, include.lowest = TRUE))
   x1 <- factor(x1, levels = my_levels)
   x2 <- factor(x2, levels = my_levels)
-  return(cbind.data.frame(x1,x2))  
+  return(list(x1,x2))  
   
 }  
 

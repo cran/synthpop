@@ -59,10 +59,10 @@ utility.tab(object, data, vars = NULL, ngroups = 5,
     synthesised counts.} 
   \item{ratioFT}{a vector with ratios of \code{UtabFT} to \code{df}.}
   \item{ratioVW}{a vector with ratios of \code{UtabVW} to \code{df}.} 
-  \item{stdFT}{a vector with standardised \code{UtabFT} in standard deviation 
-    units compared to its null distribution if the synthesising model is correct.}
-  \item{stdVW}{a vector with standardised \code{UtabVW} in standard deviation 
-    units compared to its null distribution if the synthesising model is correct.}
+  \item{pvalFT}{a vector with \code{object$m} p-values for the chi-square 
+    tests for the Freeman Tukey utility measure.}
+  \item{pvalVW}{a vector with \code{object$m} p-values for the chi-square 
+    tests for the Voas Williamson utility measure.}
   \item{nempty}{a vector of length \code{object$m} with number of cells 
     not contributing to the statistics.} 
   \item{tab.obs}{a table from the observed data.} 
@@ -70,6 +70,7 @@ utility.tab(object, data, vars = NULL, ngroups = 5,
   \item{tab.zdiff}{a table or a list of \code{m} tables of Z statistics for 
     differences between observed and synthesised cells of the tables. Large 
     absolute values indicate a large contribution to lack-of-fit.}    
+  \item{n}{number of observation in the original dataset.}
 }
 
 \references{
