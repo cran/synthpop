@@ -32,7 +32,8 @@ ods <- SD2011[, c("region", "sex", "agegr", "placesize")]
 
 s1 <- syn(ods, method = c("sample", "cart", "satcat", "cart"))
 
+\dontrun{
 ### mostly fails because too many small categories
-s2 <- syn(ods, method = c("sample", "cart", "cart", "satcat"))  
+s2 <- syn(ods, method = c("sample", "cart", "cart", "satcat"))}
 }
 \keyword{datagen}

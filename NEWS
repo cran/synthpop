@@ -1,3 +1,11 @@
+synthpop 1.5-1
+---------------
+
+BUG FIXES
+* Not running an example that mostly fails due to too many small categories in 
+  the synthesised data set.
+
+
 synthpop 1.5-0
 ---------------
 
