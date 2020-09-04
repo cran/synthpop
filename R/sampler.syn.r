@@ -10,7 +10,7 @@ sampler.syn <- function(p, data, m, syn, visit.sequence,
  #--- Assign optional parameters (...) to appropriate synthesising function   
  dots  <- as.list(substitute(list(...)))[-1L]         
  meth.with.opt <- paste(c("cart", "cartbboot", "ctree", "survctree", "polyreg",
-                          "polr", "rf", "bag", "ipf", "catall"), collapse = "\\.|")
+                          "polr", "rf", "ranger", "bag", "ipf", "catall"), collapse = "\\.|")
  meth.check <- grep(meth.with.opt, names(dots), value = TRUE)
  args.err <- !(names(dots) %in% meth.check)
  if (any(args.err)) stop("Unknown optional parameter(s): ", 
@@ -131,6 +131,7 @@ sampler.syn <- function(p, data, m, syn, visit.sequence,
          if (theMethod != "" & (!is.passive(theMethod)) & theMethod != "dummy" ) {
            
            if (theMethod %in% c("sample", "sample.proper", "constant")) {
+             
              y   <- p$data[ya, j]
              if (is.factor(y)) y <- y[, drop = TRUE]
              xp  <- length(ypa)
@@ -138,12 +139,14 @@ sampler.syn <- function(p, data, m, syn, visit.sequence,
              nam <- vname
              f   <- paste("syn", theMethod, sep = ".")
              if (theMethod == "constant") {
-               synfun <- do.call(f, args = list(y = y, xp = xp,                # getFromNamespace(f,"synthpop")
-                 smoothing = p$smoothing[j], proper = proper, ...)) 
-             } else {
-               synfun <- do.call(f, args = list(y = y, xp = xp,                # getFromNamespace(f,"synthpop")
+               synfun <- do.call(f, args = list(y = y, xp = xp, ...))    
+             } else if (is.numeric(y)) {
+               synfun <- do.call(f, args = list(y = y, xp = xp,       
                  smoothing = p$smoothing[j], cont.na = p$cont.na[[j]], 
                  proper = proper, ...)) 
+             } else {
+               synfun <- do.call(f, args = list(y = y, xp = xp, 
+                proper = proper, ...)) 
              }
              p$syn[ypa, j]  <- synfun$res
              if (models) fits[[i]][[j]] <- synfun$fit
@@ -180,15 +183,26 @@ sampler.syn <- function(p, data, m, syn, visit.sequence,
                if (models) fits[[i]][[j]] <- synfun$fit           
              
              } else if (theMethod == "nested") {
-               synfun <- do.call(f, args = c(list(y = y, x = x, xp = xp,
-                 smoothing = p$smoothing[j], cont.na = p$cont.na[[j]], 
-                 proper = proper), fun.args))
+               if (is.numeric(y)) {
+                synfun <- do.call(f, args = c(list(y = y, x = x, xp = xp,
+                  smoothing = p$smoothing[j], cont.na = p$cont.na[[j]], 
+                  proper = proper), fun.args))
+               } else {
+                synfun <- do.call(f, args = c(list(y = y, x = x, xp = xp,
+                  proper = proper), fun.args))
+               }
                p$syn[ypa, j] <- synfun$res
                if (models) fits[[i]][[j]] <- synfun$fit
                
              } else {
-               synfun <- do.call(f, args = c(list(y = y, x = x, xp = xp,
-                 smoothing = p$smoothing[j], proper = proper), fun.args))
+               if (is.numeric(y)) {
+                synfun <- do.call(f, args = c(list(y = y, x = x, xp = xp,
+                  smoothing = p$smoothing[j],
+                  proper = proper), fun.args))
+               } else {
+                synfun <- do.call(f, args = c(list(y = y, x = x, xp = xp,
+                  proper = proper), fun.args))
+               }
                p$syn[ypa, j] <- synfun$res
                if (models) fits[[i]][[j]] <- synfun$fit
              }

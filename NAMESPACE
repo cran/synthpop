@@ -1,6 +1,5 @@
 export(syn,
        syn.strata, 
-#       syn.cartbboot,
        syn.cart,
        syn.ctree,
        syn.logreg,
@@ -16,6 +15,7 @@ export(syn,
        syn.sqrtnorm,
        syn.cubertnorm,
        syn.rf,
+       syn.ranger,
        syn.bag,
        syn.nested,
        syn.satcat,
@@ -24,7 +24,8 @@ export(syn,
 
 export(compare, compare.synds, compare.fit.synds,  
        print.compare.fit.synds,	multi.compare,
-       lm.synds, glm.synds, multinom.synds, 
+       lm.synds, glm.synds, 
+       multinom.synds, polr.synds,
        print.fit.synds, print.synds,
        summary.synds, print.summary.synds,
        summary.fit.synds, print.summary.fit.synds,
@@ -68,6 +69,7 @@ importFrom(stats, glm)
 importFrom(stats, lm)
 importFrom(polspline, polymars, predict.polymars, polyclass, ppolyclass)
 importFrom(randomForest, randomForest)
+importFrom(ranger, ranger)
 importFrom(classInt, classIntervals)
 #importFrom(glmnet, glmnet, predict.glmnet) not used at the moment
 importFrom(mipfp, Ipfp)
