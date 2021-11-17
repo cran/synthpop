@@ -2,8 +2,8 @@ Package: synthpop
 Type: Package
 Title: Generating Synthetic Versions of Sensitive Microdata for
         Statistical Disclosure Control
-Version: 1.6-0
-Date: 2020-09-03
+Version: 1.7-0
+Date: 2021-11-17
 Author: Beata Nowok [aut, cre],
   Gillian M Raab [aut],
   Chris Dibben [ctb],
@@ -15,9 +15,9 @@ License: GPL-2 | GPL-3
 URL: https://www.synthpop.org.uk/
 Imports: lattice, MASS, methods, nnet, ggplot2, graphics, stats, utils,
         rpart, party, foreign, plyr, proto, polspline, randomForest,
-        ranger, classInt, mipfp
+        ranger, classInt, mipfp, survival, stringr
 LazyData: yes
 NeedsCompilation: no
-Packaged: 2020-09-04 07:31:02 UTC; bnowok
+Packaged: 2021-11-17 10:52:45 UTC; bnowok
 Repository: CRAN
-Date/Publication: 2020-09-04 08:10:02 UTC
+Date/Publication: 2021-11-17 11:30:02 UTC

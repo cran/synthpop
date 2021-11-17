@@ -1,13 +1,13 @@
 ### R code from vignette source 'inference.Rnw'
 
 ###################################################
-### code chunk number 1: inference.Rnw:50-51
+### code chunk number 1: inference.Rnw:51-52
 ###################################################
 options(prompt="R> ", width=77, digits=4, useFancyQuotes=FALSE)
 
 
 ###################################################
-### code chunk number 2: inference.Rnw:111-119
+### code chunk number 2: inference.Rnw:112-120
 ###################################################
 library(synthpop)
 ods <- SD2011[, c("smoke", "sex", "age", "edu")]
@@ -20,7 +20,7 @@ summary(glm.synds(smoke ~ sex + age + edu + sex * edu,
 
 
 ###################################################
-### code chunk number 3: inference.Rnw:124-127
+### code chunk number 3: inference.Rnw:125-128
 ###################################################
 s2 <- syn(ods, seed = 1234,visit.sequence=c("smoke","edu","age"))
 summary(glm.synds(smoke ~ sex + age + edu + sex * edu, 
@@ -28,7 +28,7 @@ data = s2, family = "binomial"))
 
 
 ###################################################
-### code chunk number 4: inference.Rnw:136-144
+### code chunk number 4: inference.Rnw:137-145
 ###################################################
 s3 <- syn(ods, seed = 1234, k = 500)
 
@@ -41,14 +41,14 @@ summary(glm.synds(smoke ~ sex + age + edu + sex * edu,
 
 
 ###################################################
-### code chunk number 5: inference.Rnw:155-157
+### code chunk number 5: inference.Rnw:156-158
 ###################################################
 summary(glm.synds(smoke ~ sex + age + edu + sex * edu, 
   data = s1, family = "binomial"), population.inference = TRUE)
 
 
 ###################################################
-### code chunk number 6: inference.Rnw:165-168
+### code chunk number 6: inference.Rnw:166-169
 ###################################################
 s4 <- syn(ods, seed = 5678, proper = TRUE)
 summary(glm.synds(smoke ~ sex + age + edu + sex * edu, 
@@ -56,7 +56,7 @@ summary(glm.synds(smoke ~ sex + age + edu + sex * edu,
 
 
 ###################################################
-### code chunk number 7: inference.Rnw:175-178
+### code chunk number 7: inference.Rnw:176-179
 ###################################################
 s5 <- syn(ods, seed = 5678, m = 10, proper = TRUE, print.flag = FALSE)
 summary(glm.synds(smoke ~ sex + age + edu + sex * edu, 
@@ -64,7 +64,7 @@ summary(glm.synds(smoke ~ sex + age + edu + sex * edu,
 
 
 ###################################################
-### code chunk number 8: inference.Rnw:187-193
+### code chunk number 8: inference.Rnw:188-194
 ###################################################
 s6 <- syn(ods, seed = 910011, m = 12, 
   method = c("", "", "", "cart"), print.flag = FALSE) 
@@ -75,7 +75,7 @@ summary(glm.synds(smoke ~ sex + age + edu + sex * edu,
 
 
 ###################################################
-### code chunk number 9: inference.Rnw:197-203
+### code chunk number 9: inference.Rnw:198-204
 ###################################################
 s7 <- syn(ods, seed = 910011, m = 1, 
   method = c("", "", "", "cart"), print.flag = FALSE) 
@@ -86,7 +86,7 @@ summary(glm.synds(smoke ~ sex + age + edu + sex * edu,
 
 
 ###################################################
-### code chunk number 10: inference.Rnw:212-215
+### code chunk number 10: inference.Rnw:213-216
 ###################################################
 summary(glm.synds(smoke ~ sex + age + edu + sex * edu, 
   data = s6, family = "binomial"), population.inference = TRUE, 
@@ -94,7 +94,7 @@ summary(glm.synds(smoke ~ sex + age + edu + sex * edu,
 
 
 ###################################################
-### code chunk number 11: inference.Rnw:247-254
+### code chunk number 11: inference.Rnw:248-255
 ###################################################
 ods <- ods[!is.na(ods$smoke), ] # remove 10 observations with missing "smoke"
 s8 <- syn.strata(ods, m = 5, method = "parametric", strata = "smoke", 
@@ -106,7 +106,7 @@ compare(f8, ods, plot.intercept = TRUE, plot = "coef")
 
 
 ###################################################
-### code chunk number 12: inference.Rnw:262-268
+### code chunk number 12: inference.Rnw:263-269
 ###################################################
 ods <- ods[!is.na(ods$smoke), ] # remove 10 observationswith missing "smoke"
 s9 <- syn(ods, m = 5, seed = 5678, 
@@ -117,7 +117,7 @@ compare(f9, ods)
 
 
 ###################################################
-### code chunk number 13: inference.Rnw:282-287
+### code chunk number 13: inference.Rnw:283-288
 ###################################################
 s10 <- syn(ods, m = 5, seed = 5678, method = "sample", 
   visit.sequence = c("sex", "edu", "age", "smoke"), print.flag = FALSE)
@@ -127,7 +127,7 @@ compare(f10, ods)
 
 
 ###################################################
-### code chunk number 14: inference.Rnw:294-299
+### code chunk number 14: inference.Rnw:295-300
 ###################################################
 s11 <- syn(ods, seed = 910011, m = 20, method = c("", "", "cart", "cart"), 
   print.flag = FALSE) 
@@ -137,7 +137,7 @@ compare(f11, ods)
 
 
 ###################################################
-### code chunk number 15: inference.Rnw:320-333
+### code chunk number 15: inference.Rnw:321-334
 ###################################################
 ods <- ods[!is.na(ods$smoke), ]
 s12 <- syn.strata(ods, m = 5, visit.sequence = c(4, 1, 2), 
@@ -155,7 +155,7 @@ compare(f13, ods, plot.intercept = TRUE)
 
 
 ###################################################
-### code chunk number 16: inference.Rnw:342-353
+### code chunk number 16: inference.Rnw:343-354
 ###################################################
 s14 <- syn(ods, m = 5, seed = 9101112, method = "parametric",
   print.flag = FALSE)
@@ -171,7 +171,7 @@ compare(f15, ods, plot.intercept = TRUE)
 
 
 ###################################################
-### code chunk number 17: inference.Rnw:371-378
+### code chunk number 17: inference.Rnw:372-379
 ###################################################
 s16 <- syn(ods, proper = TRUE, print.flag = FALSE)
 f16 <- glm.synds(smoke ~ sex  + edu  + sex * edu, data = s16, 
