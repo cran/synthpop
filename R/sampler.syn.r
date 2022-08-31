@@ -9,7 +9,8 @@ sampler.syn <- function(p, data, m, syn, visit.sequence,
 {
  #--- Assign optional parameters (...) to appropriate synthesising function   
  dots  <- as.list(substitute(list(...)))[-1L]         
- meth.with.opt <- paste(c("cart", "cartbboot", "ctree", "survctree", "polyreg",
+ meth.with.opt <- paste(c("cart", "cartbboot", "ctree", "survctree", "polyreg", 
+                          "norm", "lognorm", "sqrtnorm", "cubertnorm", "normrank", "pmm",
                           "polr", "rf", "ranger", "bag", "ipf", "catall"), collapse = "\\.|")
  meth.check <- grep(meth.with.opt, names(dots), value = TRUE)
  args.err <- !(names(dots) %in% meth.check)
@@ -39,9 +40,9 @@ sampler.syn <- function(p, data, m, syn, visit.sequence,
    if (models) fits <- rep(list(setNames(vector("list", length(p$method)),
                                 names(p$method))), m) 
    for (i in 1:m) {  # Synthesising loop
-     if (print.flag & m > 1) cat("Synthesis number ", i, 
+     if (print.flag & m > 1) cat("\nSynthesis number ", i, 
                          "\n--------------------\n", sep = "")  
-     if (print.flag & m == 1) cat("Synthesis\n-----------\n", sep = "")  
+     if (print.flag & m == 1) cat("\nSynthesis\n-----------\n", sep = "")  
      
      # Code for methods that take more than one variable together: ipf & catall      
      #--------------------------------------------------------------------------
@@ -66,13 +67,35 @@ sampler.syn <- function(p, data, m, syn, visit.sequence,
        if (print.flag == TRUE) {
          if (length(rest.visit.sequence) > 0  && 
              ncol(data) - length(numtocat) > length(grouped)) {
+
            cat("First ", length(grouped), " variables (", 
                paste(names(grouped), collapse = ", "),
                ") synthesised together by method '", ordmethod[1], "'\n", sep = "")
+           if (ordmethod[1] == "catall" && !is.null(mth.args) && 
+               "epsilon" %in% names(mth.args$catall) && mth.args$catall$epsilon > 0)
+                 cat("Synthesis made differentially private with parameter epsilon of ",
+                     mth.args$catall$epsilon,"\n",
+                     "Note that only these first variables will be made differentially private.\n")
+           if (ordmethod[1] == "ipf" && !is.null(mth.args) && 
+               "epsilon" %in% names(mth.args$ipf) && mth.args$ipf$epsilon > 0) 
+                 cat("Synthesis made differentially private with parameter epsilon of ",
+                     mth.args$ipf$epsilon,"\n",
+                     "Note that only these first variables will be made differentially private.\n")
          } else {
            cat("All ", length(grouped), 
                " variables in the data synthesised together by method '", 
                ordmethod[1], "'\n", sep = "")
+
+           if (ordmethod[1] == "catall" && !is.null(mth.args) && 
+               "epsilon" %in% names(mth.args$catall) && 
+               mth.args$catall$epsilon > 0) 
+                 cat("Synthesis made differentially private with parameter epsilon of ",
+                     mth.args$catall$epsilon,"\n")
+           if (ordmethod[1] == "ipf" && !is.null(mth.args) && 
+               "epsilon" %in% names(mth.args$ipf) && 
+               mth.args$ipf$epsilon > 0) 
+                 cat("Synthesis made differentially private with parameter epsilon of ",
+                     mth.args$ipf$epsilon,"\n")
          }   
        }   
        x <- p$data[, grouped]
@@ -240,7 +263,7 @@ sampler.syn <- function(p, data, m, syn, visit.sequence,
            cat.columns <- p$syn[, p$categories[j, 4]]  # this is the single column with the data for which this is the dummy
            model.frame(~cat.columns - 1, data = p$syn) 
            p$syn[, (j:(j + p$categories[p$categories[j, 4], 2] - 1))] <- # replaces all the dummies for this variable with
-           matrix((model.matrix(~cat.columns - 1)[, -1]),               # dummies calculated from the synthesised data
+           matrix((model.matrix(~cat.columns - 1)[, -1]),                # dummies calculated from the synthesised data
                    ncol = p$categories[p$categories[j, 4], 2],
                    nrow = nrow(p$syn))
            p$syn[,j] <- as.numeric(p$syn[, j])

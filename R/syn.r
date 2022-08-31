@@ -40,6 +40,21 @@ if (!is.null(attr(data,"filetype")) && attr(data,"filetype") == "sav") {
   var.lab <- val.lab <- NULL
 }
 
+# check problematic characters in varaiable names
+has_space  <- grepl(" ", obs.vars) + 
+              sapply(data, function(x) {res <- any(is.na(x))}) +
+              sapply(data, is.numeric)
+if (any(has_space == 3)) stop(paste("Your data have numeric variable(s) with missing values with names that include spaces:\n  ",
+                              paste0("`", paste(obs.vars[has_space == 3], collapse = "`, `"), "`"),
+                              "\nThese should be renamed for synthpop to work correctly."), call. = FALSE)
+
+bad_char <- "[^\\w_.]"
+has_bad_char  <- str_detect(obs.vars, bad_char)
+if (any(has_bad_char)) cat("WARNING: Some variable names include special characters",
+                           unlist(str_extract_all(obs.vars, bad_char)),"\n  ",
+                           paste0(str_subset(obs.vars, bad_char), collapse = ", "),
+                           "\nYou must rename them for synthpop to work correctly.")
+
 # if visit sequence includes variable names change them into column indecies 
 if (is.character(visit.sequence)) {
   nametoind <- match(visit.sequence, colnames(data))
@@ -48,6 +63,13 @@ if (is.character(visit.sequence)) {
     else visit.sequence <- nametoind
 } else if (!all(visit.sequence %in% 1:length(data))) stop("Column indices in visit.sequence must be between 1 and ", 
                                                           length(data), sep = "", call. = FALSE)  
+
+# expand user's smoothing method (single string) to all numeric variables
+if (length(smoothing) == 1 & is.character(smoothing)) {
+  numeric.vars <- which(sapply(data, is.numeric))
+  smoothing <- as.list(rep(smoothing,length(numeric.vars)))
+  names(smoothing) <- names(numeric.vars)
+}
 
 size.warn <- 100 + 10*length(visit.sequence)
 if (dim(data)[1] <  size.warn & print.flag == TRUE) {
@@ -362,8 +384,7 @@ check.method.syn <- function(setup, data, proper) {
    }
  } 
 
- #browser()
- # check that passive variables obey rule in original data
+ # check that passive relationship holds in original data
  #---
  passive.idx <- grep("~", method)
  for (i in passive.idx) {
@@ -387,11 +408,11 @@ check.method.syn <- function(setup, data, proper) {
      if (NAderived > 0) cat("Total of ", NAderived," case(s) where value in data but some predictors missing.\n", sep = "")
      if (NAorig > 0) cat("Total of ", NAorig," case(s) where no predictors missing but no value in data.\n", sep = "")
      if (nonmiss > 0) cat("Total of ", nonmiss," case(s) where predictors do not give value present in data.\n", sep = "")
-    stop("You must recompute the variable(s) in the original data in order for the synthesis to run.", sep = "", call. = FALSE)
+    cat("You might want to recompute the variable(s) in the original data.\n")
    }
 
    if (is.numeric(data.val) & any(is.na(data.val))) cat("\nVariable ", varnames[i],
-                                                        " with passive synthesis has missing values\nso it will not be used to predict other variables.", sep = "")
+                                                        " with passive synthesis has missing values\nso it will not be used to predict other variables.\n", sep = "")
  }
 
  
@@ -463,11 +484,10 @@ check.method.syn <- function(setup, data, proper) {
  if (sum(pred) > 0) has.pred <- apply(pred != 0, 1, any)   # GR condition added
  else has.pred <- rep(0, nvar) 
  
- if (any(method == "parametric")) { # the default argument
+ if (any(method == "parametric")) {
    # set method for first in visit.sequence to "sample"
-   # method[vis[1]] <- "sample"  
    # change to default methods for variables with predictors
-
+   
    if (length(vis) > 1) {
 	   for (j in vis[-1]) {
 	     if (has.pred[j]) {
@@ -484,7 +504,7 @@ check.method.syn <- function(setup, data, proper) {
 	 }
  }
   
- # check whether the elementary syhthesising methods are available
+ # check whether the elementary synthesising methods are available
  # on the search path
  active    <- !is.passive(method) & !(method == "") & !(method == "constant") 
  if (sum(active) > 0) {
@@ -561,10 +581,10 @@ check.method.syn <- function(setup, data, proper) {
  else has.pred <- rep(0, sqrt(length(pred)))            # this needed in case pred now has dimension 1
 
  for (j in vis) {
-   if (!has.pred[j] & substr(method[j],1,6) != "nested" & is.na(any(match(method[j],
-      c("", "constant", "sample", "sample.proper", "catall", "ipf")))))
+   if (!has.pred[j] & substr(method[j], 1, 6) != "nested" & is.na(any(match(method[j],
+      c("", "constant", "sample", "sample.proper", "catall", "ipf"))))) 
    {
-     if (print.flag == TRUE) cat('\nMethod "',method[j],
+     if (print.flag == TRUE) cat('\nMethod "', method[j],
      '" is not valid for a variable without predictors (',
      names(data)[j],')\nMethod has been changed to "sample"\n\n', sep = "")
      method[j] <- "sample"
@@ -683,7 +703,7 @@ check.rules.syn <- function(setup, data) {
  varnames   <- setup$varnames
  method     <- setup$method
  vis        <- setup$visit.sequence
-  
+#browser()  
  # Check the syntax
  #------------------
  # check the length of the rules and corresponding values
@@ -701,20 +721,22 @@ check.rules.syn <- function(setup, data) {
  #if (any(char.wrong)) stop("Unexpected character(s) in rules: ",paste(char.present[char.wrong],collapse=" "),".")
 
  # variables names (=a string before a special character) must be in varnames 
- rule.sep <- lapply(sapply(rules,strsplit,"[|&]"),unlist)       # split into seperate conditions
- get.vars <- lapply(rule.sep,function(x) gsub("[<>=!].*","",x)) # remove evrything after a special character
- get.vars <- lapply(get.vars,function(x) gsub(" ","",x))        # remove spaces
- get.vars <- lapply(get.vars,function(x) gsub("[\\(\\)]","",x)) # remove brackets  
- get.vars <- lapply(get.vars,function(x) gsub("is.na","",x))    # remove function name 
- get.vars <- lapply(get.vars,function(x) x[x != ""])            # remove empty strings  ?? why this
+ rule.sep <- lapply(sapply(rules, strsplit, "[|&]"), unlist)       # split into seperate conditions
+ get.vars <- lapply(rule.sep, function(x) gsub("[<>=!].*", "", x)) # remove everything after a special character
+ #get.vars <- lapply(get.vars,function(x) gsub(" ","",x))          # remove spaces
+ get.vars <- lapply(get.vars, trimws)                              # Remove leading and trailing spaces
+ get.vars <- lapply(get.vars, function(x) gsub("[\\(\\)]", "", x)) # remove brackets  
+ get.vars <- lapply(get.vars, function(x) gsub("is.na", "", x))    # remove function name
+ get.vars <- lapply(get.vars, function(x) gsub("`", "", x))        # remove `
+ get.vars <- lapply(get.vars, function(x) x[x != ""])              # remove empty strings  ?? why this
  
  vars.in.rules <- unique(unlist(get.vars))
  vars.wrong <- !(vars.in.rules %in% varnames)                   # identify unxepected variables
 
  if (any(vars.wrong)) stop("Unexpected variable(s) in rules: ",
    paste(vars.in.rules[vars.wrong], collapse = ", "), ".", call. = FALSE)
+ 
  # remove rules with warning for ipf and catall
-
  vars.with.rules <- varnames[rules != ""]
  if (any(method[varnames %in% vars.with.rules] %in% c("catall","ipf"))){
    cat("\nRules cannot be used for variables synthesised by ipf or catall")
@@ -826,7 +848,7 @@ check.rules.syn <- function(setup, data) {
                        missval = NA, argname, argdescription = "", 
                        asvector = FALSE){
    if (is.null(x)) {
-     x <- as.list(rep(missval,nvars))
+     x <- as.list(rep(missval, nvars))
    } else if (!is.list(x) | any(names(x) == "") | is.null(names(x))) {
      stop("Argument '", argname,"' must be a named list with names of selected ", 
      argdescription, " variables.", call. = FALSE)  
@@ -881,24 +903,25 @@ check.rules.syn <- function(setup, data) {
  }
 
  # M E T H O D S
- method <- gsub(" ","",method) # remove any spaces in or around method
+ method <- gsub(" ", "", method) # remove any spaces in or around method
  # # must be the same length as visit.sequence
  # if (length(method) > 1 & length(method) != length(visit.sequence)) 
  #   stop(paste("The length of method (", length(method),
  #              ") must be the same length as the visit.sequence (",length(visit.sequence),").", sep = ""), 
  #        call. = FALSE) 
+ 
  # expand user's syhthesising method (single string) to all variables
  if (length(method) == 1) {
    if (is.passive(method)) stop("Cannot have a passive syhthesising method for every column.", call. = FALSE)
    method <- rep(method, nvar)
-   if (!(method[1] %in% c("catall","ipf"))) method[visit.sequence[1]] <- "sample" #GRBN
+   if (!(method[1] %in% c("catall", "ipf"))) method[visit.sequence[1]] <- "sample"
    # set method to "" for vars not in visit.sequence
-   method[setdiff(1:nvar,visit.sequence)] <- ""
+   method[setdiff(1:nvar, visit.sequence)] <- ""
  }
  # if user specifies multiple methods, check the length of the argument
  # methods must be given for all columns in the data
  if (length(method) != nvar) stop(paste("The length of method (", length(method),
-    ") does not match the number of columns in the data (",nvar,").", sep = ""), 
+    ") does not match the number of columns in the data (", nvar, ").", sep = ""), 
     call. = FALSE)
 
 
@@ -937,8 +960,8 @@ check.rules.syn <- function(setup, data) {
    argdescription = "", asvector = TRUE)
  if (any(smoothing != "")) {
    varsmoothind <- which(smoothing != "")
-   varnumind    <- which(sapply(data,is.numeric))
-   smoothnumind <- match(varsmoothind,varnumind)
+   varnumind    <- which(sapply(data, is.numeric))
+   smoothnumind <- match(varsmoothind, varnumind)
    if (any(is.na(smoothnumind)) & print.flag == TRUE)
    cat("\nSmoothing can only be applied to numeric variables.\nNo smoothing will be applied to variable(s): ",
      paste(varnames[varsmoothind[is.na(smoothnumind)]], collapse = ", "), "\n", sep = "")   
@@ -984,7 +1007,7 @@ check.rules.syn <- function(setup, data) {
  chartofac <- (ischar * inpred) > 0
  if (sum(chartofac) > 0) {
    cat("\nVariable(s):",paste0(varnames[chartofac], collapse = ", "),
-       "have been changed for synthesis from character to factor.\n\n", sep = " ")
+       "have been changed for synthesis from character to factor.\n", sep = " ")
    for (j in (1:nvar)[chartofac]) data[,j] <- as.factor(data[,j]) 
  }
 
@@ -1001,7 +1024,7 @@ check.rules.syn <- function(setup, data) {
  if (minnumlevels < 5 & any(nlevel > minnumlevels & nlevel <= 5 & ifnum & inpred & notevent)) {
    cat("Warning: In your synthesis there are numeric variables with 5 or fewer levels: ",                     
        paste0(varnames[nlevel > minnumlevels & nlevel <= 5 & ifnum & inpred & notevent], collapse = ", "), ".",
-       "\nConsider changing them to factors. You can do it using parameter 'minnumlevels'.\n\n", sep = "")  
+       "\nConsider changing them to factors. You can do it using parameter 'minnumlevels'.\n", sep = "")  
  }
 
  vartofactor <- which(nlevel <= minnumlevels & ifnum & inpred & notevent)
@@ -1046,7 +1069,8 @@ check.rules.syn <- function(setup, data) {
  rvalues          <- setup$rvalues
  cont.na          <- setup$cont.na
  default.method   <- setup$default.method
- denom            <- setup$denom                       
+ denom            <- setup$denom  
+ 
  ############################################################
 
  method[!(1:length(method) %in% visit.sequence)] <- ""  
@@ -1092,7 +1116,7 @@ check.rules.syn <- function(setup, data) {
    else cat("CAUTION: The synthesised data will contain the variable(s) unchanged.\n\n")
  }
 
-#browser()   
+
 # remove columns not used from data and replace predictor matrix, visit sequence, nvar and others
  if (any(out) & drop.not.used == T) {
    if (sum(!out) == 0) stop("No variables left to be synthesised", call. = FALSE) ######to stop if all data excluded 
@@ -1153,10 +1177,10 @@ check.rules.syn <- function(setup, data) {
      cat("CAUTION: The synthesised data will contain the variable(s) unchanged.\n")
    }
  } 
- #browser()                                                     #  GR condition added
- if (sum(predictor.matrix) > 0) {
-	 
-   pm <- padMis.syn(data, method, predictor.matrix, visit.sequence,
+
+ if (sum(predictor.matrix) > 0){
+
+	 pm <- padMis.syn(data, method, predictor.matrix, visit.sequence,
 			   nvar, rules, rvalues, default.method, cont.na, smoothing, event, denom)
 
 	 # Pad the Syhthesis model with dummy variables for the factors
@@ -1167,16 +1191,16 @@ check.rules.syn <- function(setup, data) {
    if (k != dim(data)[1]) {
      # create a non-empty data frame in case some variables are kept unsynthesised
      p$syn <- p$syn[sample(1:nrow(data), k, replace = TRUE),]
-     dimnames(p$syn)[[1]] <- 1:k                             #!BN-15/06/2016
+     dimnames(p$syn)[[1]] <- 1:k
    }
    if (sum(duplicated(names(p$data))) > 0)
      stop("Column names of padded data should be unique.", call. = FALSE)
  
-	 p$cont.na <- pm$cont.na  #!bn
+	 p$cont.na <- pm$cont.na  
 	 
  } else {
  
-   p <- list(data = data,                             #  GR this added
+   p <- list(data = data,                        
              syn = data,
              predictor.matrix = predictor.matrix, 
              method = method, 
@@ -1184,12 +1208,12 @@ check.rules.syn <- function(setup, data) {
              rules = rules,
              rvalues = rvalues,
              cont.na = cont.na, 
-             event = event,                  #GRdenom new
-             denom = denom,                  #GRdenom new
+             event = event,                
+             denom = denom,
              categories = NULL,
              smoothing = smoothing)         
    
-   if (k != dim(data)[1]) {                                  #!BN-27/06/2018
+   if (k != dim(data)[1]) {
      p$syn <- p$syn[sample(1:nrow(data), k, replace = TRUE),]   
      dimnames(p$syn)[[1]] <- 1:k
    }
@@ -1292,6 +1316,7 @@ check.rules.syn <- function(setup, data) {
 
 #---------------------------------------------------------------------
 #Tidy models
+
 #---
  if (models) {
    if (m == 1) { 
@@ -1300,9 +1325,9 @@ check.rules.syn <- function(setup, data) {
                grepl("orig.", names(fits))
      if (any(fitout)) fits <- fits[!fitout]
      # move the models for non-missing values to original position
-     n.0 <- grepl(".0", names(fits))      
+     n.0 <- grepl("\\.0", names(fits))      
      if (any(n.0)) {
-       fits[gsub(".0", "", names(fits[n.0]))] <- fits[n.0]
+       fits[gsub("\\.0", "", names(fits[n.0]))] <- fits[n.0]
        fits <- fits[!n.0]
      }
    }
@@ -1311,9 +1336,9 @@ check.rules.syn <- function(setup, data) {
        fitout <- sapply(fits[[j]], function(x) is.null(x) || (is.character(x) && x =="dummy")) |
                  grepl("orig.", names(fits))
        if (any(fitout)) fits[[j]] <- fits[[j]][!fitout]
-       n.0 <- grepl(".0",names(fits[[j]]))
+       n.0 <- grepl("\\.0",names(fits[[j]]))
        if ( any(n.0)) {
-         fits[[j]][gsub(".0","",names(fits[[j]][n.0]))] <- fits[[j]][n.0]
+         fits[[j]][gsub("\\.0","",names(fits[[j]][n.0]))] <- fits[[j]][n.0]
          fits[[j]] <- fits[[j]][!n.0]
        }
      }

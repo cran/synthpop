@@ -1,3 +1,42 @@
+synthpop 1.8-0
+---------------
+
+NEW FEATURES
+* An option in compare.synds() to add values of a selected utility measure 
+  to names of a plot facets (`utility.to.plot` argument).
+* Synthesis with "catall" and "ipf" has new features that permit the creation 
+  of differentialy private (DP) synthetic data. Parameters are `epsilon` and 
+  `rand`.
+* New smoothing methods (`smoothing` argument): "spline" and "rmean". Now you 
+  can also provide a single string specifying a smoothing method, which will be
+  then used to smooth all numeric variables in the data. You can still provide
+  a named list to smooth selected variables only.
+* New parameters `low`, `high`, `n.breaks`, and `breaks` for utility.tables()
+  that allow to create a two color binned gradient and set colours for low and 
+  high ends of the gradient.  
+
+CHANGES
+* Optional parameters can be set for syn.norm(), syn.lognorm(), syn.sqrtnorm(),
+  syn.cubertnorm(), syn.normrank(), syn.pmm().
+* syn.cubertnorm() now allows negative values.
+* In multi.compare() if `msel = NULL`, pooled synthetic data copies are 
+  compared with the original data.  
+* Parameter `incomplete` added to summary.fit.synds() function.  
+* In syn.ipf() default value of `tol` parameter changed to 1e-3 in order to 
+  speed up convergence.
+* Sublist elements of structural zero list must be named.
+  
+BUG FIXES
+* In multi.compare() default colour and fill scales restored for ggplot() to
+  allow for more than 9 levels/synthetic data sets to be plotted.
+* Automatic detection of incomplete synthesis.
+* Formatting of labels for ploting numeric variables in compare.synds() that
+  could create duplicated values.
+* Subsetting of columns in data frames that are also tibbles.  
+* Handling of special characters in variable names.
+* Labeling of multi.compare() plots.
+
+
 synthpop 1.7-0
 ---------------
 
@@ -27,7 +66,6 @@ NEW FEATURES
   respectively, whether plots should be produced and tables printed. By default
   plots are printed and tables are suppressed. 
 
-
 CHANGES
 * Default `minnumlevels` changed from -1 to 1. This permits numeric variables 
   with a single distinct value as well as missing values to be synthesised 
@@ -37,7 +75,7 @@ CHANGES
 * Improved error messages in syn() to signal small samples or factor variables
   with too many levels.
 * Matrix of predictors x in logreg.syn() is centred and xp made to match to 
-  improve comptutation (thanks to Héloïse Gauvin for noting this problem).
+  improve comptutation (thanks to Heloise Gauvin for noting this problem).
 * Improved error messages and help file for syn.survctree().
 * In syn() variables changed to factors from character are changed back to
   character in synthetic data.
@@ -55,7 +93,6 @@ CHANGES
   readable.
 * In multi.compare() if barplot.position = "dodge", source of data 
   (original/sythetic) is mapped to an aesthetic `fill`. 
-
 
 BUG FIXES
 * Problems with checks when a variable has a class attribute that is of 
