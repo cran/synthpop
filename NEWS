@@ -1,3 +1,11 @@
+
+synthpop 1.9-1
+---------------
+
+CHANGES
+* Removal of typos from the inference vignette.
+
+
 synthpop 1.9-0
 ---------------
 NEW FEATURES
@@ -54,6 +62,7 @@ BUG FIXES
 * The function utility.tables() now has an explicit parameter `max.table` that is 
   used by utility.tab() to override the default for the maximum table size for 
   any set of tables to prevent the plots from failing.
+
 
 synthpop 1.8-0
 ---------------
