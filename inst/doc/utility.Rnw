@@ -227,7 +227,7 @@ Logistic models for data sets with many variables are limited by the number of p
   
 The choice of model for diagnosing and fixing problems with a synthesis is different. For this we need a method that will pinpoint the parts of the distribution of synthetic data that differ from that of the original.  It is possible to examine the trees that have been used to calculate the propensity score from CART models or the coefficients of the propensity score model, but in practice the effect of individual variables is difficult to identify.
  
- An approach that is much more practical and useful is to examine the agreement between the synthetic and original data for low-order margins: starting with one-way marginals, then two-way and perhaps three-way. This approach is illustrated in the next section. A first step is to calculate utilities from all one-way marginals and compare plots. Since Version~1.7-0 this function also produces a table of utility measures for each one-way table. The code below gives utility statistics for this example and {\label{fig:Fig3} is an extract from the set of plots produced.
+ An approach that is much more practical and useful is to examine the agreement between the synthetic and original data for low-order margins: starting with one-way marginals, then two-way and perhaps three-way. This approach is illustrated in the next section. A first step is to calculate utilities from all one-way marginals and compare plots. Since Version~1.7-0 this function also produces a table of utility measures for each one-way table. The code below gives utility statistics for this example and \label{fig:Fig3} is an extract from the set of plots produced.
  
 <<fig=FALSE,eval=FALSE>>=
 compare(syn_para, ods, utility.stats = c("S_pMSE", "df"))
