@@ -130,7 +130,7 @@ will not be in the SD and $UiOiS$ (Unique in Original in Synthetic) gives the \%
 synthetic data giving, $repU$ is the percentage of unique original records that are also unique in the SD.
 
 The percentage $repU$ has been used as a disclosure measure to evaluate SD by \cite{jackson_rss} and by \cite{raab22} \footnote{Jackson et al. in \cite{jackson_rss} argue that the denominator for $repU$ should be $N_s$ rather than $N_d$. This is inappropriate because our scenario is to consider the risk to the original data.}.
-Replicated uniques are used in \texttt{synthpop} as part of the statistical disclosure control function, \texttt{sdc}, that includes the option of reducing disclosure risk by removing them from the SD. Nowok et al. \cite{nowok_repu} have evaluated this and give an example where this process has very little effect on utility. The function \texttt{replicated.uniques}\footnote{For example by \texttt{replicated.uniques (s2, ods, keys = c("sex","region","age","placesize")} } also calculates $repU$ using a different method from the one described here.
+Replicated uniques are used in \texttt{synthpop} as part of the statistical disclosure control function, \texttt{sdc}, that includes the option of reducing disclosure risk by removing them from the SD. Nowok et al. \cite{nowok_repu} have evaluated this and give an example where this process has very little effect on utility. The function \texttt{replicated.uniques}\footnote{For example by \texttt{replicated.uniques(s2, ods, keys = c("sex","region","age","placesize"))}} also calculates $repU$ using a different method from the one described here.
 
 One of the outputs of the functions \texttt{disclosure} and \texttt{multi.disclosure} is \texttt{ident}, a table of identity disclosure measures as illustrated by this example, using the keys from the example in Section \ref{sec:simpexamp} but now calculated for a synthetic object with 5 data sets, using the one target \texttt{depress}. We first create \texttt{t5} an object of class \texttt{disclosure} and then print out the identity and attribute disclosure measures for each synthetic data set.
 
@@ -233,7 +233,7 @@ for \texttt{multi.disclosure} and \texttt{disclosure} can be used for this.
 \begin{itemize}
 \item{\texttt{not.target}: All records with levels of the target given by the parameter \texttt{not.target} are excluded from all disclosure measures.}
 \item{\texttt{usekeysNA}:This is set to TRUE by default so that missing values are included in all tables. It can be set to FALSE for some or all keys to exclude NAs.}
-\item{\texttt{usetargetsNA)(multi.disclosure) or usetargetNA (disclosure) )}: Similar to the above for target(s) - note can be a vector for multi.disclosure.}
+\item{\texttt{usetargetsNA (multi.disclosure) or usetargetNA (disclosure)}: Similar to the above for target(s) - note can be a vector for multi.disclosure.}
 \item{\texttt{exclude.keys, exclude.keylevs and exclude.targetlev}: Three vectors of length the number of key-target pairs to be excluded from all tables.\footnote{For \texttt{multi.disclosure} these parameters are supplied as lists with elements for each target in \texttt{targets}}}
 \end{itemize}
 \begin{figure}[ht]
@@ -310,7 +310,7 @@ They should also enable the disclosure risks of different synthesis methods to b
 
 
 \section{Acknowledgement}
-Research Data Scotland (\url{https://www.researchdata.scot/} funded Gillian Raab's time to carry 
+Research Data Scotland (\url{https://www.researchdata.scot/}) funded Gillian Raab's time to carry 
 out the research reported here and  to expand the capabilities of the synthpop package\footnote{
 from version 1.8-0 available on CRAN at \url{https://CRAN.R-project.org/package=synthpop}
 }
@@ -372,14 +372,14 @@ Totals  &  & 0 &  & & $N_{s~both}$ &  &  &  & $N_{s\:only}$ & $N_s$ \\
 \end{center}
  To calculate the \% of records in the original and SD we need:
   \begin{equation}
-\%~Unique~in~Original = UiO = 100\sum{(d_{.q} |d_{.q} = 1})/N_d. 
+\%~Unique~in~Original = UiO = 100\sum{(d_{.q} |d_{.q} = 1)}/N_d. 
   \end{equation}
   \begin{equation}
-  \%~Unique~in~Synthetic = UiS = 100\sum{(s_{.q} |d_{.q} = 1})/N_d.
+  \%~Unique~in~Synthetic = UiS = 100\sum{(s_{.q} |d_{.q} = 1)}/N_d.
     \end{equation}
     The intruder has information about the keys for an individual in the real data that they attempt to identify in the SD. They first attempt to find them in the SD, and  the \% found is:
       \begin{equation}
-    \%~Unique~in~Original~in~Synthetic = UiOiS = 100 \sum{(d_{.q} = 1 |s_{.q} = 1 \land d_{.q} > 0})/N_d.
+    \%~Unique~in~Original~in~Synthetic = UiOiS = 100 \sum{(d_{.q} = 1 |s_{.q} = 1 \land d_{.q} > 0)}/N_d.
       \end{equation}
       Some of these records would not be unique in the SD, restricting to such records gives:
         \begin{equation}
@@ -390,28 +390,28 @@ Totals  &  & 0 &  & & $N_{s~both}$ &  &  &  & $N_{s\:only}$ & $N_s$ \\
      
 Returning to the scenario described in Section \ref{subsec:scen}, we must first define a measure of attribute disclosure for the original data. This is based on the concept of \textit{l-diversity} \cite{ldiv} that requires that each set of records defined by $q$ has at least $l(\ge{2}$ distinct values of the target. A data set is \textit{l2-diverse} for $q$ and $t$ if all records for every $q$ have the same level of $t$\footnote{This could be generalised to $l>2$, but in practice the levels of targets are not generally exchangeable and a more practical approach would be to aggregate levels for certain targets.} An attribute disclosure measure for the original data can be defined as \textit{\% Disclosive in Original} :
 \begin{equation}
- Dorig = 100\sum^q{\sum^t{(d_{tq} |pd_{tq} = 1})}/N_d.
+ Dorig = 100\sum^q{\sum^t{(d_{tq} |pd_{tq} = 1)}}/N_d.
 \end{equation}
 The equivalent measure for the SD, taken as if it were real, becomes :
 \begin{equation}
- Dsyn = 100\sum^q{\sum^t{(s_{tq} |ps_{tq} = 1})}/N_s.
+ Dsyn = 100\sum^q{\sum^t{(s_{tq} |ps_{tq} = 1)}}/N_s.
 \end{equation}
 An intruder with access only to the SD, but with knowledge of $q$ from one or more individuals in the original, would look them up in the SD. Some of their $q$ levels be key combinations that do not appear in the SD
 leaving the proportion that do appear as $iSO$ (in in Synthetic Original) 
 \begin{equation}
- iSO = 100\sum^q{\sum^t{(d_{tq} | s_{tq}>0} )}/N_d.
+ iSO = 100\sum^q{\sum^t{(d_{tq} | s_{tq}>0)}}/N_d.
 \end{equation}
 A level of $q$ from an original record may identify more than one target in the SD, or identify the wrong target.
 To exclude these we require the records to be Disclosive in  the SD and Correct when checked 
 with the original giving:
 \begin{equation}
- DiSCO = 100\sum^q{\sum^t{(d_{tq} | ps_{tq} = 1}  )}/N_d.
+ DiSCO = 100\sum^q{\sum^t{(d_{tq} | ps_{tq} = 1)}}/N_d.
 \end{equation}
 
 Note that $DiSCO$ can include records that are not disclosive in the original data giving a further 
 measure Disclosive in Synthetic and Disclosive in the  Original :
 \begin{equation}
-DiSDiO = 100\sum^q{\sum^t{(d_{tq} | ps_{tq} = 1 \land pd_{tq} = 1}  ) }/N_d.
+DiSDiO = 100\sum^q{\sum^t{(d_{tq} | ps_{tq} = 1 \land pd_{tq} = 1)}}/N_d.
   \end{equation}
 As we comment above the intruder would not be able to tell if records were 
 identified as $DiSDiO$ rather than $DiSCO$, so we prefer the latter measure.
@@ -428,15 +428,15 @@ The measures $baseCAPd$, $DCAP$, $TCAP$ are calculated by the function \texttt{d
 \end{equation}
 The \% of $t$ that would be correctly predicted from $q$ for someone with access to the original data is $CAPd$:
 \begin{equation}
-  \nonumber CAPd = \sum\limits_{tq}{(pd_{tq}}d_{tq})/N_d,
+  \nonumber CAPd = \sum\limits_{tq}{(pd_{tq}d_{tq})}/N_d,
 \end{equation}
 and the equivalent measure for the SD treated as if it were the original is
 \begin{equation}
-  \nonumber CAPs = \sum\limits_{tq}{(ps_{tq}}s_{tq})/N_s.
+  \nonumber CAPs = \sum\limits_{tq}{(ps_{tq}s_{tq})}/N_s.
 \end{equation}
 The measure  DCAP is the percentage of $t$ correctly predicted in the SD  $q$. This gives
 \begin{equation}
-  \nonumber DCAP = \sum\limits_{tq}{(ps_{tq}}d_{tq})/N_d
+  \nonumber DCAP = \sum\limits_{tq}{(ps_{tq}d_{tq})}/N_d
 \end{equation}
 The $DCAP$ score can be expressed  by scaling it from  $baseCAPD$ to 1 (see \cite{little2022,lotte}), although this can result in some negative values.
 The $TCAP$ measure as defined by \cite{little2022} uses the same count of disclosive records

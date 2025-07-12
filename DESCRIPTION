@@ -2,8 +2,8 @@ Package: synthpop
 Type: Package
 Title: Generating Synthetic Versions of Sensitive Microdata for
         Statistical Disclosure Control
-Version: 1.9-1.1
-Date: 2025-03-06
+Version: 1.9-2
+Date: 2025-07-12
 Authors@R: c(person(given = "Beata",
                     family = "Nowok",
                     role = c("aut", "cre"),
@@ -33,7 +33,7 @@ Imports: lattice, MASS, methods, nnet, ggplot2, graphics, stats, utils,
 Encoding: UTF-8
 LazyData: yes
 NeedsCompilation: no
-Packaged: 2025-06-03 05:42:37 UTC; hornik
+Packaged: 2025-07-12 21:26:27 UTC; beatan01
 Author: Beata Nowok [aut, cre],
   Gillian M Raab [aut],
   Chris Dibben [ctb],
@@ -42,5 +42,4 @@ Author: Beata Nowok [aut, cre],
   Lotte Pater [ctb]
 Maintainer: Beata Nowok <beata.nowok@gmail.com>
 Repository: CRAN
-Date/Publication: 2025-06-03 05:53:06 UTC
-Depends: R (>= 2.10)
+Date/Publication: 2025-07-12 22:00:02 UTC
